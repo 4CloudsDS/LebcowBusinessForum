@@ -1,0 +1,28 @@
+@page "/StatusCode/{code:int}"
+@model LebcowBusinessForum.Web.Pages.StatusCodeModel
+@{
+    ViewData["Title"] = Model.HttpStatusCode == 404 ? "Page Not Found" : $"Error {Model.HttpStatusCode}";
+}
+
+<div class="error-page" role="main" aria-labelledby="status-heading">
+    <p class="error-page__code" aria-hidden="true">@Model.HttpStatusCode</p>
+    @if (Model.HttpStatusCode == 404)
+    {
+        <h1 id="status-heading" class="error-page__title">Page Not Found</h1>
+        <p class="error-page__body">
+            We couldn't find the page you're looking for. It may have been moved, deleted,
+            or the address may have been mistyped.
+        </p>
+    }
+    else
+    {
+        <h1 id="status-heading" class="error-page__title">An Error Occurred</h1>
+        <p class="error-page__body">
+            We encountered an error (HTTP @Model.HttpStatusCode). Please try again or return home.
+        </p>
+    }
+    <div style="display:flex;gap:1rem;flex-wrap:wrap;justify-content:center;">
+        <a href="/" class="btn btn--primary">Return Home</a>
+        <a href="/Browse" class="btn btn--outline">Browse Businesses</a>
+    </div>
+</div>

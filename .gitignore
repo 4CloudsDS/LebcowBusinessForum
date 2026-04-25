@@ -1,0 +1,19 @@
+# .NET / ASP.NET Core
+**/bin/
+**/obj/
+*.user
+.vs/
+
+# SQLite dev databases
+*.db
+*.db-shm
+*.db-wal
+
+# Publish output
+**/publish/
+
+# User-specific files
+*.suo
+*.ntvs*
+*.njsproj
+*.sln.docstates

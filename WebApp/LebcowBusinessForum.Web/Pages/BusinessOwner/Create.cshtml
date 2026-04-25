@@ -1,0 +1,63 @@
+@page
+@model LebcowBusinessForum.Web.Pages.BusinessOwner.CreateModel
+@{
+    ViewData["Title"] = "Add Your Business";
+}
+
+<div class="container form-page">
+    <h1 class="page-title">Add Your Business</h1>
+
+    <form method="post" class="business-form" novalidate enctype="multipart/form-data">
+        @Html.AntiForgeryToken()
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+        <div class="form-group">
+            <label asp-for="Input.Name">Business name</label>
+            <input asp-for="Input.Name" type="text" class="form-control" required />
+            <span asp-validation-for="Input.Name" class="field-error" role="alert"></span>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="Input.CategoryId">Category</label>
+            <select asp-for="Input.CategoryId" class="form-control" required>
+                <option value="">— Select a category —</option>
+                @foreach (var cat in Model.Categories)
+                {
+                    <option value="@cat.CategoryId">@cat.Name</option>
+                }
+            </select>
+            <span asp-validation-for="Input.CategoryId" class="field-error" role="alert"></span>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="Input.Description">Description</label>
+            <textarea asp-for="Input.Description" class="form-control" rows="4"></textarea>
+            <span asp-validation-for="Input.Description" class="field-error" role="alert"></span>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="Input.Address">Address</label>
+            <input asp-for="Input.Address" type="text" class="form-control" required />
+            <span asp-validation-for="Input.Address" class="field-error" role="alert"></span>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="Input.Phone">Phone number</label>
+            <input asp-for="Input.Phone" type="tel" class="form-control" autocomplete="tel" required />
+            <span asp-validation-for="Input.Phone" class="field-error" role="alert"></span>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="Input.Email">Email address</label>
+            <input asp-for="Input.Email" type="email" class="form-control" autocomplete="email" required />
+            <span asp-validation-for="Input.Email" class="field-error" role="alert"></span>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="Input.Website">Website (optional)</label>
+            <input asp-for="Input.Website" type="url" class="form-control" autocomplete="url" />
+        </div>
+
+        <button type="submit" class="btn btn--primary">Submit Listing</button>
+    </form>
+</div>

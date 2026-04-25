@@ -1,0 +1,68 @@
+@page
+@model LebcowBusinessForum.Web.Pages.EventsModel
+@{
+    ViewData["Title"] = "Upcoming Events";
+    var now = DateTime.UtcNow;
+    var upcoming = Model.Events.Where(e => e.Date >= now).OrderBy(e => e.Date).ToList();
+    var past = Model.Events.Where(e => e.Date < now).OrderByDescending(e => e.Date).ToList();
+}
+
+<div class="container events-page">
+    <h1 class="page-title">Upcoming Events</h1>
+
+    @if (!upcoming.Any())
+    {
+        <p role="status" class="no-results">No upcoming events at this time.</p>
+    }
+    else
+    {
+        <ul class="events-list events-list--full">
+            @foreach (var ev in upcoming)
+            {
+                <li class="event-item">
+                    <time datetime="@ev.Date.ToString("yyyy-MM-dd")" class="event-item__date">
+                        @ev.Date.ToString("d MMM yyyy")
+                    </time>
+                    <div class="event-item__details">
+                        <h2 class="event-item__title">
+                            <a href="/Events/@ev.EventId">@ev.Title</a>
+                        </h2>
+                        <p class="event-item__location">@ev.Location</p>
+                        @if (ev.Organizer != null)
+                        {
+                            <p class="event-organiser">Organised by @(ev.Organizer.UserName ?? ev.Organizer.Email)</p>
+                        }
+                        <p class="event-item__description">@ev.Description</p>
+                    </div>
+                </li>
+            }
+        </ul>
+    }
+
+    @if (past.Any())
+    {
+        <div style="margin-top:var(--space-xl);">
+            <button type="button"
+                    class="btn btn--outline btn--sm"
+                    aria-expanded="false"
+                    aria-controls="past-events"
+                    onclick="var p=document.getElementById('past-events'),open=p.hidden;p.hidden=!open;this.setAttribute('aria-expanded',open);this.textContent=open?'Hide past events':'Show past events (@past.Count)';">
+                Show past events (@past.Count)
+            </button>
+            <ul id="past-events" class="events-list events-list--full" hidden style="margin-top:var(--space-md);opacity:.7;">
+                @foreach (var ev in past)
+                {
+                    <li class="event-item">
+                        <time datetime="@ev.Date.ToString("yyyy-MM-dd")" class="event-item__date">
+                            @ev.Date.ToString("d MMM yyyy")
+                        </time>
+                        <div class="event-item__details">
+                            <h2 class="event-item__title">@ev.Title</h2>
+                            <p class="event-item__location">@ev.Location</p>
+                        </div>
+                    </li>
+                }
+            </ul>
+        </div>
+    }
+</div>

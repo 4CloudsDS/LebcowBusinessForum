@@ -1,0 +1,117 @@
+@page
+@model LebcowBusinessForum.Web.Pages.IndexModel
+@{
+    ViewData["Title"] = "Home";
+}
+
+<section class="hero" aria-labelledby="hero-heading">
+    <div class="hero__inner">
+        <h1 id="hero-heading" class="hero__title">
+            Find Trusted South African Businesses
+        </h1>
+        <p class="hero__subtitle">
+            Browse thousands of verified local businesses, read reviews, and connect with your community.
+        </p>
+        <form method="get" action="/Browse" class="hero__search" role="search" aria-label="Business search">
+            <label for="hero-search-input" class="sr-only">Search businesses</label>
+            <input id="hero-search-input"
+                   type="search"
+                   name="q"
+                   placeholder="Restaurant, lawyer, plumber..."
+                   class="search-input"
+                   autocomplete="off"
+                   aria-label="Search term" />
+            <label for="hero-location-input" class="sr-only">Location</label>
+            <input id="hero-location-input"
+                   type="text"
+                   name="location"
+                   placeholder="City or province"
+                   class="search-input search-input--location"
+                   aria-label="Location" />
+            <button type="submit" class="btn btn--primary">Search</button>
+        </form>
+    </div>
+</section>
+
+<div class="trust-bar" aria-label="Trust signals">
+    <ul class="trust-bar__list">
+        <li class="trust-bar__item"><span class="trust-bar__icon" aria-hidden="true">&#10003;</span> Verified businesses</li>
+        <li class="trust-bar__item"><span class="trust-bar__icon" aria-hidden="true">&#9733;</span> Trusted community reviews</li>
+        <li class="trust-bar__item"><span class="trust-bar__icon" aria-hidden="true">&#128274;</span> Free to browse &mdash; no account needed</li>
+        <li class="trust-bar__item"><span class="trust-bar__icon" aria-hidden="true">&#127481;&#127487;</span> South Africa&rsquo;s local business directory</li>
+    </ul>
+</div>
+    <div class="container">
+        <h2 id="categories-heading" class="section-title">Browse by Category</h2>
+        <ul class="categories-grid" aria-label="Business categories">
+            @foreach (var cat in Model.FeaturedCategories)
+            {
+                <li>
+                    <a href="/Browse?category=@cat.CategoryId" class="category-tile">
+                        <span class="category-tile__icon" aria-hidden="true">@GetCategoryIcon(cat.Name)</span>
+                        <span class="category-tile__name">@cat.Name</span>
+                    </a>
+                </li>
+            }
+        </ul>
+    </div>
+</section>
+
+@functions {
+    static string GetCategoryIcon(string name) => name?.ToLowerInvariant() switch
+    {
+        var n when n.Contains("restaurant") || n.Contains("food") || n.Contains("eat") => "\uD83C\uDF7D\uFE0F",
+        var n when n.Contains("health") || n.Contains("medical") || n.Contains("clinic") => "\uD83C\uDFE5",
+        var n when n.Contains("legal") || n.Contains("law") || n.Contains("attorney") => "\u2696\uFE0F",
+        var n when n.Contains("retail") || n.Contains("shop") || n.Contains("store") => "\uD83D\uDECD\uFE0F",
+        var n when n.Contains("tech") || n.Contains("it") || n.Contains("digital") => "\uD83D\uDCBB",
+        var n when n.Contains("education") || n.Contains("school") || n.Contains("tutoring") => "\uD83C\uDF93",
+        var n when n.Contains("transport") || n.Contains("logistic") || n.Contains("delivery") => "\uD83D\uDE9A",
+        var n when n.Contains("beauty") || n.Contains("salon") || n.Contains("spa") => "\u2728",
+        var n when n.Contains("construction") || n.Contains("build") || n.Contains("plumb") => "\uD83D\uDD28",
+        var n when n.Contains("finance") || n.Contains("bank") || n.Contains("accounting") => "\uD83D\uDCB0",
+        _ => "\uD83C\uDFEA"
+    };
+}
+
+<section class="featured-section" aria-labelledby="featured-heading">
+    <div class="container">
+        <h2 id="featured-heading" class="section-title">Featured Businesses</h2>
+        <div class="business-grid">
+            @foreach (var biz in Model.FeaturedBusinesses)
+            {
+                <partial name="_BusinessCard" model="biz" />
+            }
+        </div>
+    </div>
+</section>
+
+<section class="events-section" aria-labelledby="events-heading">
+    <div class="container">
+        <h2 id="events-heading" class="section-title">Upcoming Events</h2>
+        <ul class="events-list">
+            @foreach (var ev in Model.UpcomingEvents)
+            {
+                <li class="event-item">
+                    <time datetime="@ev.Date.ToString("yyyy-MM-dd")" class="event-item__date">
+                        @ev.Date.ToString("d MMM yyyy")
+                    </time>
+                    <div class="event-item__details">
+                        <h3 class="event-item__title">@ev.Title</h3>
+                        <p class="event-item__location">@ev.Location</p>
+                    </div>
+                    <a href="/Events/@ev.EventId" class="btn btn--ghost btn--sm">View</a>
+                </li>
+            }
+        </ul>
+        <a href="/Events" class="link-more">View all events &rarr;</a>
+    </div>
+</section>
+
+<section class="cta-section" aria-labelledby="cta-heading">
+    <div class="container">
+        <h2 id="cta-heading" class="cta__title">Own a Business?</h2>
+        <p class="cta__body">List your business for free and reach thousands of customers across South Africa.</p>
+        <a href="/Account/Register" class="btn btn--primary btn--lg">Get Listed</a>
+    </div>
+</section>

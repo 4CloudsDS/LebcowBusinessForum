@@ -1,0 +1,90 @@
+@page
+@model LebcowBusinessForum.Web.Pages.ForumModel
+@{
+    ViewData["Title"] = "Community Forum";
+}
+
+<div class="container events-page">
+    <h1 class="page-title">Community Forum</h1>
+
+    @if (User.Identity?.IsAuthenticated == true)
+    {
+        <div class="auth-card" style="max-width:none;margin-bottom:var(--space-xl);">
+            <h2 class="auth-card__title">New Post</h2>
+            <form method="post">
+                <div asp-validation-summary="All" class="alert alert-danger"></div>
+                <div class="form-group">
+                    <label class="form-label" asp-for="NewPostTitle">Title</label>
+                    <input asp-for="NewPostTitle" class="form-control" maxlength="200" required />
+                    <span asp-validation-for="NewPostTitle" class="field-error"></span>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" asp-for="NewPostBody">Message</label>
+                    <textarea asp-for="NewPostBody" class="form-control" rows="4" required></textarea>
+                    <span asp-validation-for="NewPostBody" class="field-error"></span>
+                </div>
+                <button type="submit" class="btn btn--primary">Post</button>
+            </form>
+        </div>
+    }
+    else
+    {
+        <div style="margin-bottom:var(--space-xl);">
+            <button class="btn btn--primary" disabled
+                    aria-disabled="true"
+                    title="Sign in to post in the forum"
+                    style="cursor:not-allowed;opacity:.55;">
+                New Post
+            </button>
+            <p class="results-count" style="margin-top:var(--space-sm);">
+                <a href="/Account/Login">Sign in</a> to join the discussion.
+            </p>
+        </div>
+    }
+
+    <div id="forum-posts">
+        @foreach (var post in Model.Posts)
+        {
+            <div class="review-item" style="margin-bottom:var(--space-md);">
+                <div style="display:flex;align-items:center;gap:var(--space-sm);margin-bottom:var(--space-xs);">
+                    <span class="business-card__logo-placeholder" style="width:36px;height:36px;font-size:1rem;" aria-hidden="true">
+                        @(post.Author?.FullName?[0] ?? '?')
+                    </span>
+                    <div>
+                        <strong>@(post.Author?.FullName ?? "Unknown")</strong>
+                        <time class="review-item__date" datetime="@post.CreatedAt.ToString("yyyy-MM-dd")">
+                            @post.CreatedAt.ToString("d MMM yyyy")
+                        </time>
+                    </div>
+                </div>
+                <h3 style="font-size:1rem;margin-bottom:var(--space-xs);">@post.Title</h3>
+                <p>@post.Body</p>
+            </div>
+        }
+
+        @if (!Model.Posts.Any())
+        {
+            <p class="no-results">No forum posts yet. Be the first to start a discussion!</p>
+        }
+    </div>
+
+    @if (Model.TotalPages > 1)
+    {
+        <nav class="pager" aria-label="Forum pagination" style="margin-top:var(--space-lg);">
+            <ul class="pager__list">
+                @if (Model.PageNumber > 1)
+                {
+                    <li><a href="?pageNumber=@(Model.PageNumber - 1)" class="btn btn--ghost btn--sm" aria-label="Previous page">← Prev</a></li>
+                }
+                @for (int p = 1; p <= Model.TotalPages; p++)
+                {
+                    <li><a href="?pageNumber=@p" class="btn btn--sm @(p == Model.PageNumber ? "btn--primary" : "btn--ghost")" aria-current="@(p == Model.PageNumber ? "page" : null)">@p</a></li>
+                }
+                @if (Model.PageNumber < Model.TotalPages)
+                {
+                    <li><a href="?pageNumber=@(Model.PageNumber + 1)" class="btn btn--ghost btn--sm" aria-label="Next page">Next →</a></li>
+                }
+            </ul>
+        </nav>
+    }
+</div>

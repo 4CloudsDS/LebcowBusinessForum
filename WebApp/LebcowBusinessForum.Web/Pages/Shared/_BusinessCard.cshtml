@@ -1,0 +1,72 @@
+@using LebcowBusinessForum.Web.Models
+@model Business
+
+@{
+    // Compute display rating from Reviews collection
+    var reviewCount = Model.Reviews?.Count ?? 0;
+    var avgRating = reviewCount > 0 ? Model.Reviews!.Average(r => r.Rating) : 0;
+    var fullStars = (int)Math.Round(avgRating);
+    var isFeatured = Model.Listings?.Any(l => l.Tier != null && l.Tier.ToLowerInvariant() != "free") == true;
+    var statusClass = Model.Status?.ToLowerInvariant() switch
+    {
+        "approved" => "active",
+        "pending" => "pending",
+        "rejected" => "rejected",
+        _ => "active"
+    };
+}
+
+<article class="business-card" aria-label="@Model.Name">
+    @if (isFeatured)
+    {
+        <span class="card-ribbon" aria-label="Featured listing">Featured</span>
+    }
+    <div class="business-card__logo">
+        @if (!string.IsNullOrEmpty(Model.LogoUrl))
+        {
+            <img src="@Model.LogoUrl" alt="@Model.Name logo" loading="lazy" />
+        }
+        else
+        {
+            <span class="business-card__logo-placeholder" aria-hidden="true">@Model.Name[0]</span>
+        }
+    </div>
+    <div class="business-card__body">
+        <h3 class="business-card__name">
+            <a href="/Business/@Model.BusinessId" class="business-card__link">@Model.Name</a>
+        </h3>
+        @if (reviewCount > 0)
+        {
+            <div class="business-card__rating" aria-label="@avgRating.ToString("F1") out of 5 stars, @reviewCount reviews">
+                <span class="business-card__stars" aria-hidden="true">
+                    @for (int i = 1; i <= 5; i++) { @(i <= fullStars ? "★" : "☆") }
+                </span>
+                <span class="business-card__rating-count">(@reviewCount)</span>
+            </div>
+        }
+        <div class="business-card__badges">
+            <span class="status-dot status-dot--@statusClass" aria-hidden="true"></span>
+            <span class="business-card__category">@Model.Category?.Name</span>
+        </div>
+        @{
+            var regionText = !string.IsNullOrEmpty(Model.Region)
+                ? Model.Region
+                : Model.Address?.Split(',').FirstOrDefault()?.Trim();
+        }
+        @if (!string.IsNullOrEmpty(regionText))
+        {
+            <span class="badge badge--region">@regionText</span>
+        }
+        <p class="business-card__address">@Model.Address</p>
+        <p class="business-card__description">@Model.Description</p>
+    </div>
+    <div class="business-card__actions">
+        <a href="/Business/@Model.BusinessId" class="btn btn--sm btn--outline">View Details →</a>
+        <a href="tel:@Model.Phone" class="btn btn--ghost btn--sm" aria-label="Call @Model.Name">
+            Call
+        </a>
+        <a href="mailto:@Model.Email" class="btn btn--ghost btn--sm" aria-label="Email @Model.Name">
+            Email
+        </a>
+    </div>
+</article>

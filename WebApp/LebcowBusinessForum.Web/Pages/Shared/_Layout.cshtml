@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="@(ViewData["Description"] as string ?? "LebcowBusiness Forum — Your trusted South African business directory")" />
+    <meta name="theme-color" content="#1a5276" />
+    <meta property="og:site_name" content="LebcowBusiness Forum" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="@(ViewData["Title"] != null ? ViewData["Title"] + " — LebcowBusiness Forum" : "LebcowBusiness Forum")" />
+    <meta property="og:description" content="@(ViewData["Description"] as string ?? "Your trusted South African business directory")" />
+    <title>@ViewData["Title"] — LebcowBusiness Forum</title>
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/nav.css" asp-append-version="true" />
+</head>
+<body>
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+
+    <header role="banner">
+        <nav class="site-nav" aria-label="Primary navigation">
+            <div class="nav-brand">
+                <a href="/" class="brand-link" aria-label="LebcowBusiness Forum home">
+                    <span class="brand-name">LebcowBusiness</span>
+                    <span class="brand-tag">Forum</span>
+                </a>
+            </div>
+
+            <button class="nav-toggle" aria-controls="nav-menu" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="nav-toggle__bar"></span>
+                <span class="nav-toggle__bar"></span>
+                <span class="nav-toggle__bar"></span>
+            </button>
+
+            <ul class="nav-menu" id="nav-menu" role="menubar">
+                <li role="none"><a href="/" role="menuitem" class="nav-link @(ViewContext.RouteData.Values["page"]?.ToString() == "/Index" ? "active" : "")" aria-current="@(ViewContext.RouteData.Values["page"]?.ToString() == "/Index" ? "page" : null)">Home</a></li>
+                <li role="none"><a href="/Browse" role="menuitem" class="nav-link @(ViewContext.RouteData.Values["page"]?.ToString() == "/Browse" ? "active" : "")" aria-current="@(ViewContext.RouteData.Values["page"]?.ToString() == "/Browse" ? "page" : null)">Browse</a></li>
+                <li role="none"><a href="/Events" role="menuitem" class="nav-link @(ViewContext.RouteData.Values["page"]?.ToString() == "/Events" ? "active" : "")" aria-current="@(ViewContext.RouteData.Values["page"]?.ToString() == "/Events" ? "page" : null)">Events</a></li>
+                <li role="none"><a href="/Forum" role="menuitem" class="nav-link @(ViewContext.RouteData.Values["page"]?.ToString() == "/Forum" ? "active" : "")" aria-current="@(ViewContext.RouteData.Values["page"]?.ToString() == "/Forum" ? "page" : null)">Forum</a></li>
+                @if (User.IsInRole("Admin"))
+                {
+                    <li role="none"><a href="/Admin" role="menuitem" class="nav-link" style="color:var(--color-accent);">Admin</a></li>
+                }
+            </ul>
+
+            <div class="nav-actions">
+                @if (User.Identity?.IsAuthenticated == true)
+                {
+                    <a href="/Account/Dashboard" class="btn btn--ghost btn--sm">Dashboard</a>
+                    <form method="post" action="/Account/Logout" class="nav-logout">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn--outline btn--sm">Sign Out</button>
+                    </form>
+                }
+                else
+                {
+                    <a href="/Account/Login" class="btn btn--ghost btn--sm">Sign In</a>
+                    <a href="/Account/Register" class="btn btn--primary btn--sm">List Your Business</a>
+                }
+            </div>
+        </nav>
+    </header>
+
+    <main id="main-content" role="main" tabindex="-1">
+        @{
+            var flash = TempData["Flash"] as string;
+            var flashType = TempData["FlashType"] as string ?? "info";
+        }
+        @if (!string.IsNullOrEmpty(flash))
+        {
+            <div class="alert alert--@flashType" role="alert" aria-live="polite">
+                <span class="alert__icon" aria-hidden="true">
+                    @(flashType == "success" ? "✓" : flashType == "danger" ? "✗" : "ℹ")
+                </span>
+                @flash
+                <button type="button" class="alert__dismiss" aria-label="Dismiss message" onclick="this.parentElement.remove()">×</button>
+            </div>
+        }
+        @RenderBody()
+    </main>
+
+    <footer role="contentinfo" class="site-footer">
+        <div class="footer-inner">
+            <div class="footer-brand">
+                <p class="footer-brand__name">LebcowBusiness Forum</p>
+                <p class="footer-brand__tagline">Connecting South African businesses</p>
+            </div>
+            <nav aria-label="Footer navigation" class="footer-nav">
+                <ul>
+                    <li><a href="/About">About</a></li>
+                    <li><a href="/Contact">Contact</a></li>
+                    <li><a href="/Newsletter">Newsletter</a></li>
+                    <li><a href="/Privacy">Privacy Policy</a></li>
+                    <li><a href="/Terms">Terms of Use</a></li>
+                </ul>
+            </nav>
+            <p class="footer-copy">&copy; @DateTime.Now.Year LebcowBusiness Forum. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="~/js/nav.js" defer></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

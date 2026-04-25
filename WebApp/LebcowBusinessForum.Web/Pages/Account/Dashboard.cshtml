@@ -1,0 +1,48 @@
+@page
+@model LebcowBusinessForum.Web.Pages.Account.DashboardModel
+@{
+    ViewData["Title"] = "My Dashboard";
+}
+
+<div class="container dashboard-page">
+    <h1 class="page-title">My Dashboard</h1>
+
+    <section class="dashboard-section" aria-labelledby="my-businesses-heading">
+        <h2 id="my-businesses-heading">My Businesses</h2>
+        @if (Model.MyBusinesses.Count == 0)
+        {
+            <p>You have no listed businesses yet.</p>
+            <a href="/BusinessOwner/Create" class="btn btn--primary">Add a Business</a>
+        }
+        else
+        {
+            <ul class="dashboard-business-list">
+                @foreach (var biz in Model.MyBusinesses)
+                {
+                    <li class="dashboard-business-item">
+                        <span class="dashboard-business-item__name">@biz.Name</span>
+                        <span class="status-badge status-badge--@biz.Status">@biz.Status</span>
+                        <a href="/BusinessOwner/Edit/@biz.BusinessId" class="btn btn--ghost btn--sm">Edit</a>
+                    </li>
+                }
+            </ul>
+        }
+    </section>
+
+    <section class="dashboard-section" aria-labelledby="saved-heading">
+        <h2 id="saved-heading">Saved Businesses</h2>
+        @if (Model.SavedBusinesses.Count == 0)
+        {
+            <p>You have no saved businesses.</p>
+        }
+        else
+        {
+            <div class="business-grid">
+                @foreach (var biz in Model.SavedBusinesses)
+                {
+                    <partial name="_BusinessCard" model="biz" />
+                }
+            </div>
+        }
+    </section>
+</div>

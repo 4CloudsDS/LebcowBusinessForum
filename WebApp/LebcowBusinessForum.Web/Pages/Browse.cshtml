@@ -1,0 +1,59 @@
+@page
+@model LebcowBusinessForum.Web.Pages.BrowseModel
+@{
+    ViewData["Title"] = "Browse Businesses";
+}
+
+<div class="container browse-page">
+    <h1 class="page-title">Browse Businesses</h1>
+
+    <form method="get" class="search-bar" role="search" aria-label="Filter businesses">
+        <div class="search-bar__fields">
+            <label for="search-q" class="sr-only">Search term</label>
+            <input id="search-q" type="search" name="q" value="@Model.Query"
+                   placeholder="Business name or keyword"
+                   class="search-input" />
+
+            <label for="search-location" class="sr-only">Location</label>
+            <input id="search-location" type="text" name="location" value="@Model.Location"
+                   placeholder="City or province"
+                   class="search-input search-input--location" />
+
+            <label for="search-category" class="sr-only">Category</label>
+            <select id="search-category" name="category" class="search-select">
+                <option value="">All Categories</option>
+                @foreach (var cat in Model.AllCategories)
+                {
+                    <option value="@cat.CategoryId"
+                            selected="@(Model.SelectedCategory == cat.CategoryId)">
+                        @cat.Name
+                    </option>
+                }
+            </select>
+
+            <button type="submit" class="btn btn--primary">Filter</button>
+        </div>
+    </form>
+
+    <div class="browse-results">
+        @if (Model.Results.Count == 0)
+        {
+            <div class="no-results-state" role="status">
+                <p class="no-results">No businesses found. Try broadening your search.</p>
+                <a href="/Browse" class="btn btn--outline btn--sm">Clear filters</a>
+            </div>
+        }
+        else
+        {
+            <p class="results-count" role="status">
+                Showing @Model.Results.Count result@(Model.Results.Count == 1 ? "" : "s")
+            </p>
+            <div class="business-grid">
+                @foreach (var biz in Model.Results)
+                {
+                    <partial name="_BusinessCard" model="biz" />
+                }
+            </div>
+        }
+    </div>
+</div>

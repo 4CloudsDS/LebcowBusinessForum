@@ -1,0 +1,36 @@
+@page
+@model LebcowBusinessForum.Web.Pages.NewsletterModel
+@{
+    ViewData["Title"] = "Newsletter";
+}
+
+<div class="container py-5" style="max-width:520px;">
+    <h1 class="mb-3">Stay in the Loop</h1>
+    <p class="text-muted mb-4">
+        Subscribe to the LebcowBusiness Forum newsletter and receive updates on new listings,
+        community events, and South African business news.
+    </p>
+
+    @if (Model.Subscribed)
+    {
+        <div class="alert alert-success">
+            You're subscribed! Thank you for joining the community.
+        </div>
+    }
+    else
+    {
+        <form method="post">
+            <div asp-validation-summary="All" class="text-danger mb-2"></div>
+            <div class="mb-3">
+                <label asp-for="Email" class="form-label"></label>
+                <input asp-for="Email" class="form-control" type="email" placeholder="you@example.com" />
+                <span asp-validation-for="Email" class="text-danger"></span>
+            </div>
+            <button type="submit" class="btn btn-primary w-100">Subscribe</button>
+        </form>
+    }
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

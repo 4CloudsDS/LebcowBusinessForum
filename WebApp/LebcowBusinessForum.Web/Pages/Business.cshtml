@@ -1,0 +1,170 @@
+@page "{id:guid}"
+@model LebcowBusinessForum.Web.Pages.BusinessDetailModel
+@{
+    ViewData["Title"] = Model.Business?.Name ?? "Business";
+}
+
+@if (Model.Business is null)
+{
+    <div class="container">
+        <p class="not-found" role="status">Business not found.</p>
+        <a href="/Browse" class="btn btn--ghost">Back to Browse</a>
+    </div>
+    return;
+}
+
+<div class="container business-detail">
+    <nav aria-label="Breadcrumb" class="breadcrumb">
+        <ol>
+            <li><a href="/">Home</a></li>
+            <li><a href="/Browse">Browse</a></li>
+            <li aria-current="page">@Model.Business.Name</li>
+        </ol>
+    </nav>
+
+    <header class="business-detail__header">
+        @if (!string.IsNullOrEmpty(Model.Business.LogoUrl))
+        {
+            <img src="@Model.Business.LogoUrl" alt="@Model.Business.Name logo"
+                 class="business-detail__logo" loading="lazy" />
+        }
+        <div class="business-detail__meta">
+            <h1 class="business-detail__name">@Model.Business.Name</h1>
+            <p class="business-detail__category">@Model.Business.Category?.Name</p>
+            <p class="business-detail__address">@Model.Business.Address</p>
+            <div class="business-detail__contact">
+                <a href="tel:@Model.Business.Phone" class="btn btn--primary">
+                    Call @Model.Business.Phone
+                </a>
+                <a href="mailto:@Model.Business.Email" class="btn btn--outline">
+                    Email
+                </a>
+                @if (!string.IsNullOrEmpty(Model.Business.Website))
+                {
+                    <a href="@Model.Business.Website" target="_blank" rel="noopener noreferrer"
+                       class="btn btn--ghost">
+                        Website
+                    </a>
+                }
+            </div>
+        </div>
+    </header>
+
+    <section class="business-detail__description" aria-labelledby="desc-heading">
+        <h2 id="desc-heading">About</h2>
+        <p>@Model.Business.Description</p>
+    </section>
+
+    @{
+        var mapsKey = ViewData["GoogleMapsKey"] as string ?? string.Empty;
+        var addressEncoded = Uri.EscapeDataString(Model.Business.Address ?? string.Empty);
+    }
+    @if (!string.IsNullOrEmpty(mapsKey) && !string.IsNullOrEmpty(Model.Business.Address))
+    {
+        <section class="business-detail__map" aria-label="Map location">
+            <h2>Location</h2>
+            <iframe
+                title="Map showing location of @Model.Business.Name"
+                width="100%"
+                height="300"
+                style="border:0;"
+                loading="lazy"
+                allowfullscreen
+                referrerpolicy="no-referrer-when-downgrade"
+                src="https://www.google.com/maps/embed/v1/place?key=@mapsKey&q=@addressEncoded">
+            </iframe>
+        </section>
+    }
+    else if (!string.IsNullOrEmpty(Model.Business.Address))
+    {
+        <section class="business-detail__map" aria-label="Map location">
+            <h2>Location</h2>
+            <p class="text-muted">
+                <a href="https://maps.google.com/?q=@addressEncoded"
+                   target="_blank" rel="noopener noreferrer">
+                    View @Model.Business.Address on Google Maps
+                </a>
+            </p>
+        </section>
+    }
+
+    <section class="business-detail__reviews" aria-labelledby="reviews-heading">
+        <h2 id="reviews-heading">Reviews (@Model.ReviewCount)</h2>
+        @if (Model.Reviews.Count == 0)
+        {
+            <p>No reviews yet. Be the first!</p>
+        }
+        else
+        {
+            <div class="rating-hero">
+                <span class="rating-hero__score">@Model.AverageRating.ToString("0.0")</span>
+                <div class="rating-hero__stars" aria-label="@Model.AverageRating.ToString("0.0") out of 5 stars">
+                    @{ var heroStars = (int)Math.Round(Model.AverageRating); }
+                    @for (int i = 1; i <= 5; i++)
+                    {
+                        <span aria-hidden="true">@(i <= heroStars ? "★" : "☆")</span>
+                    }
+                </div>
+                <span class="rating-hero__count">(@Model.ReviewCount reviews)</span>
+            </div>
+            <ul class="reviews-list">
+                @foreach (var review in Model.Reviews)
+                {
+                    <li class="review-item">
+                        <div class="review-item__rating" aria-label="Rating: @review.Rating out of 5">
+                            @for (int i = 1; i <= 5; i++)
+                            {
+                                <span class="star @(i <= review.Rating ? "star--filled" : "star--empty")"
+                                      aria-hidden="true">★</span>
+                            }
+                        </div>
+                        <p class="review-item__comment">@review.Comment</p>
+                        <p class="review-item__author text-muted small">@review.User?.FullName ?? "Anonymous"</p>
+                        <time datetime="@review.CreatedAt.ToString("yyyy-MM-dd")"
+                              class="review-item__date">
+                            @review.CreatedAt.ToString("d MMM yyyy")
+                        </time>
+                    </li>
+                }
+            </ul>
+        }
+
+        @if (Model.CanReview)
+        {
+            <div class="review-form mt-4">
+                <h3>Write a Review</h3>
+                <form method="post" asp-page-handler="Review" asp-route-id="@Model.Business.BusinessId">
+                    <div asp-validation-summary="All" class="text-danger mb-2"></div>
+                    <div class="mb-3">
+                        <label asp-for="ReviewInput.Rating" class="form-label">Rating (1–5)</label>
+                        <select asp-for="ReviewInput.Rating" class="form-select" style="width:auto;">
+                            <option value="5">★★★★★ Excellent</option>
+                            <option value="4">★★★★☆ Good</option>
+                            <option value="3">★★★☆☆ Average</option>
+                            <option value="2">★★☆☆☆ Poor</option>
+                            <option value="1">★☆☆☆☆ Terrible</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="ReviewInput.Comment" class="form-label">Comment</label>
+                        <textarea asp-for="ReviewInput.Comment" class="form-control" rows="3" maxlength="1000" required></textarea>
+                        <span asp-validation-for="ReviewInput.Comment" class="text-danger"></span>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Submit Review</button>
+                </form>
+            </div>
+        }
+        else if (User.Identity?.IsAuthenticated == true)
+        {
+            <p class="text-muted mt-3">You have already reviewed this business.</p>
+        }
+        else
+        {
+            <p class="mt-3"><a asp-page="/Account/Login">Sign in</a> to leave a review.</p>
+        }
+    </section>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
