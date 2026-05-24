@@ -71,7 +71,7 @@ jobs:
       - name: Run tests
         run: |
           if [ -f "${{ env.TEST_PROJECT_PATH }}" ]; then
-            dotnet test "${{ env.TEST_PROJECT_PATH }}" --configuration Release --no-build --verbosity normal
+            dotnet test "${{ env.TEST_PROJECT_PATH }}" --configuration Release --no-restore --verbosity normal
           else
             echo "No test project found — skipping."
           fi
