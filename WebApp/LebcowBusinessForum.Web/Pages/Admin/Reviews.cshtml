@@ -1,0 +1,91 @@
+@page
+@model LebcowBusinessForum.Web.Pages.Admin.ReviewsModel
+@{
+    ViewData["Title"] = "Admin — Moderate Reviews";
+}
+
+<div class="container admin-page admin-shell py-4">
+    <header class="admin-header">
+        <div>
+            <h1 class="page-title">Moderate Reviews</h1>
+            <p class="admin-subtitle">Review community feedback and remove harmful or irrelevant content quickly.</p>
+        </div>
+        <div class="admin-header__actions">
+            <a href="/Admin" class="btn btn--outline btn--sm">Back to Admin</a>
+        </div>
+    </header>
+
+    @if (TempData["Message"] is string msg)
+    {
+        <div class="alert alert--success" role="alert" aria-live="polite">
+            <span class="alert__icon" aria-hidden="true">✓</span>
+            @msg
+            <button type="button" class="alert__dismiss" aria-label="Dismiss message" onclick="this.parentElement.remove()">×</button>
+        </div>
+    }
+
+    <section class="admin-kpi-grid">
+        <article class="admin-kpi-card">
+            <span class="admin-kpi-card__label">Total Reviews</span>
+            <strong class="admin-kpi-card__value">@Model.Reviews.Count</strong>
+        </article>
+        <article class="admin-kpi-card">
+            <span class="admin-kpi-card__label">Average Score</span>
+            <strong class="admin-kpi-card__value">@(Model.Reviews.Count == 0 ? "0.0" : Model.Reviews.Average(r => r.Rating).ToString("0.0"))</strong>
+        </article>
+    </section>
+
+    <section class="admin-panel">
+        <div class="admin-panel__header">
+            <h2>Review Queue</h2>
+            <p>Showing @Model.Reviews.Count review(s), newest first.</p>
+        </div>
+
+        @if (Model.Reviews.Count == 0)
+        {
+            <div class="admin-empty-state">No reviews yet.</div>
+        }
+        else
+        {
+            <div class="admin-table-wrap">
+                <table class="admin-data-table">
+                    <thead>
+                        <tr>
+                            <th>Business</th>
+                            <th>Reviewer</th>
+                            <th>Rating</th>
+                            <th>Comment</th>
+                            <th>Date</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var review in Model.Reviews)
+                        {
+                            <tr>
+                                <td data-label="Business"><a href="/Business/@review.BusinessId">@review.Business?.Name</a></td>
+                                <td data-label="Reviewer">@(string.IsNullOrWhiteSpace(review.User?.FullName) ? "Anonymous" : review.User!.FullName)</td>
+                                <td data-label="Rating">
+                                    <span class="admin-rating" aria-label="@review.Rating out of 5 stars">
+                                        @for (int i = 0; i < review.Rating; i++) { <span>★</span> }
+                                        @for (int i = review.Rating; i < 5; i++) { <span class="admin-rating--empty">☆</span> }
+                                    </span>
+                                </td>
+                                <td data-label="Comment" class="admin-comment-cell">
+                                    <span title="@review.Comment">@(review.Comment.Length > 80 ? review.Comment[..80] + "…" : review.Comment)</span>
+                                </td>
+                                <td data-label="Date">@review.CreatedAt.ToString("dd MMM yyyy")</td>
+                                <td data-label="Action">
+                                    <form method="post" asp-page-handler="Delete" onsubmit="return confirm('Remove this review?')">
+                                        <input type="hidden" name="id" value="@review.ReviewId" />
+                                        <button type="submit" class="btn btn--outline btn--sm">Remove</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </section>
+</div>

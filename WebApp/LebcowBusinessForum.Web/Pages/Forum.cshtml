@@ -4,15 +4,27 @@
     ViewData["Title"] = "Community Forum";
 }
 
-<div class="container events-page">
-    <h1 class="page-title">Community Forum</h1>
+<div class="container forum-page">
+    <div class="forum-page__head">
+        <h1 class="page-title">Community Forum</h1>
+        <form method="get" class="forum-tools" aria-label="Forum sorting options">
+            <input type="hidden" name="pageNumber" value="@Model.PageNumber" />
+            <label class="forum-tools__toggle">
+                <input type="checkbox" name="prioritizeOfficial" value="true" @(Model.PrioritizeOfficial ? "checked" : null) onchange="this.form.submit()" />
+                Pin official updates first
+            </label>
+        </form>
+    </div>
 
     @if (User.Identity?.IsAuthenticated == true)
     {
-        <div class="auth-card" style="max-width:none;margin-bottom:var(--space-xl);">
-            <h2 class="auth-card__title">New Post</h2>
+        <section class="forum-composer" aria-labelledby="new-post-heading">
+            <h2 id="new-post-heading" class="auth-card__title">New Post</h2>
             <form method="post">
-                <div asp-validation-summary="All" class="alert alert-danger"></div>
+                @if (!ViewData.ModelState.IsValid)
+                {
+                    <div asp-validation-summary="All" class="alert alert--danger" role="alert"></div>
+                }
                 <div class="form-group">
                     <label class="form-label" asp-for="NewPostTitle">Title</label>
                     <input asp-for="NewPostTitle" class="form-control" maxlength="200" required />
@@ -25,7 +37,7 @@
                 </div>
                 <button type="submit" class="btn btn--primary">Post</button>
             </form>
-        </div>
+        </section>
     }
     else
     {
@@ -45,21 +57,31 @@
     <div id="forum-posts">
         @foreach (var post in Model.Posts)
         {
-            <div class="review-item" style="margin-bottom:var(--space-md);">
-                <div style="display:flex;align-items:center;gap:var(--space-sm);margin-bottom:var(--space-xs);">
-                    <span class="business-card__logo-placeholder" style="width:36px;height:36px;font-size:1rem;" aria-hidden="true">
+            var isAdminPost = Model.AdminAuthorIds.Contains(post.AuthorId);
+            <article class="forum-post-card @(isAdminPost ? "forum-post-card--admin" : string.Empty)">
+                <header class="forum-post-card__meta">
+                    <span class="business-card__logo-placeholder forum-post-card__avatar" aria-hidden="true">
                         @(post.Author?.FullName?[0] ?? '?')
                     </span>
                     <div>
-                        <strong>@(post.Author?.FullName ?? "Unknown")</strong>
+                        <div class="forum-post-card__author-line">
+                            <strong>@(post.Author?.FullName ?? "Unknown")</strong>
+                            @if (isAdminPost)
+                            {
+                                <span class="forum-official-badge" title="Official update by administrator">
+                                    <span aria-hidden="true">📌</span>
+                                    Official update
+                                </span>
+                            }
+                        </div>
                         <time class="review-item__date" datetime="@post.CreatedAt.ToString("yyyy-MM-dd")">
                             @post.CreatedAt.ToString("d MMM yyyy")
                         </time>
                     </div>
-                </div>
-                <h3 style="font-size:1rem;margin-bottom:var(--space-xs);">@post.Title</h3>
-                <p>@post.Body</p>
-            </div>
+                </header>
+                <h3 class="forum-post-card__title">@post.Title</h3>
+                <p class="forum-post-card__body">@post.Body</p>
+            </article>
         }
 
         @if (!Model.Posts.Any())
@@ -74,15 +96,15 @@
             <ul class="pager__list">
                 @if (Model.PageNumber > 1)
                 {
-                    <li><a href="?pageNumber=@(Model.PageNumber - 1)" class="btn btn--ghost btn--sm" aria-label="Previous page">← Prev</a></li>
+                    <li><a href="?pageNumber=@(Model.PageNumber - 1)&prioritizeOfficial=@Model.PrioritizeOfficial" class="btn btn--ghost btn--sm" aria-label="Previous page">← Prev</a></li>
                 }
                 @for (int p = 1; p <= Model.TotalPages; p++)
                 {
-                    <li><a href="?pageNumber=@p" class="btn btn--sm @(p == Model.PageNumber ? "btn--primary" : "btn--ghost")" aria-current="@(p == Model.PageNumber ? "page" : null)">@p</a></li>
+                    <li><a href="?pageNumber=@p&prioritizeOfficial=@Model.PrioritizeOfficial" class="btn btn--sm @(p == Model.PageNumber ? "btn--primary" : "btn--ghost")" aria-current="@(p == Model.PageNumber ? "page" : null)">@p</a></li>
                 }
                 @if (Model.PageNumber < Model.TotalPages)
                 {
-                    <li><a href="?pageNumber=@(Model.PageNumber + 1)" class="btn btn--ghost btn--sm" aria-label="Next page">Next →</a></li>
+                    <li><a href="?pageNumber=@(Model.PageNumber + 1)&prioritizeOfficial=@Model.PrioritizeOfficial" class="btn btn--ghost btn--sm" aria-label="Next page">Next →</a></li>
                 }
             </ul>
         </nav>

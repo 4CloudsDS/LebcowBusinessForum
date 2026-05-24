@@ -153,6 +153,25 @@ public class HttpLoadTests : IClassFixture<LebcowWebFactory>
             Assert.True((int)r.StatusCode < 500,
                 $"Forum paginated GET returned {(int)r.StatusCode}"));
     }
+
+    [Fact]
+    [Trait("Category", "Load")]
+    public async Task ForumPage_PrioritizeOfficial_10Users_AllSucceed()
+    {
+        const int concurrency = 10;
+        var tasks = Enumerable.Range(1, concurrency)
+            .Select(i =>
+            {
+                var c = _factory.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
+                return c.GetAsync($"/Forum?prioritizeOfficial=true&pageNumber={i}");
+            });
+
+        var responses = await Task.WhenAll(tasks);
+
+        Assert.All(responses, r =>
+            Assert.True((int)r.StatusCode < 500,
+                $"Forum prioritizeOfficial GET returned {(int)r.StatusCode}"));
+    }
 }
 
 // ─── Service-level throughput suite ─────────────────────────────────────────

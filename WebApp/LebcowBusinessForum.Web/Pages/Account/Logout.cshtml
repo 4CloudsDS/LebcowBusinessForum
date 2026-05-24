@@ -1,0 +1,16 @@
+@page
+@model LebcowBusinessForum.Web.Pages.Account.LogoutModel
+@{
+    ViewData["Title"] = "Sign Out";
+}
+
+<div class="container" style="max-width:36rem; padding:2rem 1rem;">
+    <h1 class="page-title">Sign Out</h1>
+    <p>Are you sure you want to sign out of your account?</p>
+
+    <form method="post">
+        @Html.AntiForgeryToken()
+        <button type="submit" class="btn btn--primary">Yes, sign me out</button>
+        <a href="/" class="btn btn--ghost" style="margin-left:0.5rem;">Cancel</a>
+    </form>
+</div>

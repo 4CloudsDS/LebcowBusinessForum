@@ -1,0 +1,175 @@
+@page
+@model LebcowBusinessForum.Web.Pages.Admin.ListingsModel
+@{
+    ViewData["Title"] = "Admin — Manage Listings";
+}
+
+<div class="container admin-page admin-shell py-4">
+    <header class="admin-header">
+        <div>
+            <h1 class="page-title">Manage Listings</h1>
+            <p class="admin-subtitle">Approve businesses, monitor listing upgrades, and keep directory quality high.</p>
+        </div>
+        <div class="admin-header__actions">
+            <a href="/Admin" class="btn btn--outline btn--sm">Back to Admin</a>
+            <a href="/BusinessOwner/Create" class="btn btn--primary btn--sm">Add Business</a>
+        </div>
+    </header>
+
+    @if (TempData["Message"] is string msg)
+    {
+        <div class="alert alert--success" role="alert" aria-live="polite">
+            <span class="alert__icon" aria-hidden="true">✓</span>
+            @msg
+            <button type="button" class="alert__dismiss" aria-label="Dismiss message" onclick="this.parentElement.remove()">×</button>
+        </div>
+    }
+
+    <section class="admin-kpi-grid">
+        <article class="admin-kpi-card">
+            <span class="admin-kpi-card__label">Total Businesses</span>
+            <strong class="admin-kpi-card__value">@Model.Businesses.Count</strong>
+        </article>
+        <article class="admin-kpi-card">
+            <span class="admin-kpi-card__label">Pending Upgrades</span>
+            <strong class="admin-kpi-card__value">@Model.PendingUpgrades.Count</strong>
+        </article>
+        <article class="admin-kpi-card">
+            <span class="admin-kpi-card__label">Pending Approvals</span>
+            <strong class="admin-kpi-card__value">@Model.Businesses.Count(b => b.Status == "pending")</strong>
+        </article>
+    </section>
+
+    <section class="admin-panel admin-panel--highlight">
+        <div class="admin-panel__header">
+            <h2>Pending Listing Upgrades</h2>
+            <p>@Model.PendingUpgrades.Count request(s) awaiting payment confirmation.</p>
+        </div>
+
+        @if (Model.PendingUpgrades.Count == 0)
+        {
+            <div class="admin-empty-state">No pending upgrades.</div>
+        }
+        else
+        {
+            <div class="admin-table-wrap">
+                <table class="admin-data-table">
+                    <thead>
+                        <tr>
+                            <th>Business</th>
+                            <th>Requested Tier</th>
+                            <th>Submitted</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var listing in Model.PendingUpgrades)
+                        {
+                            <tr>
+                                <td data-label="Business">@listing.Business?.Name</td>
+                                <td data-label="Requested Tier"><span class="badge badge--premium">@listing.Tier</span></td>
+                                <td data-label="Submitted">@listing.StartDate.ToString("dd MMM yyyy")</td>
+                                <td data-label="Actions">
+                                    <div class="admin-action-row">
+                                        <form method="post">
+                                            <input type="hidden" name="listingId" value="@listing.ListingId" />
+                                            <button type="submit" asp-page-handler="ConfirmUpgrade" class="btn btn--primary btn--sm">Confirm Paid</button>
+                                        </form>
+                                        <form method="post">
+                                            <input type="hidden" name="listingId" value="@listing.ListingId" />
+                                            <button type="submit" asp-page-handler="CancelUpgrade" class="btn btn--outline btn--sm">Cancel</button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </section>
+
+    <section class="admin-panel">
+        <div class="admin-panel__header admin-panel__header--split">
+            <div>
+                <h2>All Businesses</h2>
+                <p>Showing @Model.Businesses.Count result(s).</p>
+            </div>
+            <div class="admin-filter-row" role="group" aria-label="Business status filters">
+                <a asp-page="Listings" asp-route-StatusFilter="all" class="admin-filter-pill @((Model.StatusFilter == "all" || string.IsNullOrEmpty(Model.StatusFilter)) ? "is-active" : "")">All</a>
+                <a asp-page="Listings" asp-route-StatusFilter="pending" class="admin-filter-pill @(Model.StatusFilter == "pending" ? "is-active" : "")">Pending</a>
+                <a asp-page="Listings" asp-route-StatusFilter="approved" class="admin-filter-pill @(Model.StatusFilter == "approved" ? "is-active" : "")">Approved</a>
+                <a asp-page="Listings" asp-route-StatusFilter="rejected" class="admin-filter-pill @(Model.StatusFilter == "rejected" ? "is-active" : "")">Rejected</a>
+            </div>
+        </div>
+
+        @if (Model.Businesses.Count == 0)
+        {
+            <div class="admin-empty-state">No businesses found for the selected filter.</div>
+        }
+        else
+        {
+            <div class="admin-table-wrap">
+                <table class="admin-data-table">
+                    <thead>
+                        <tr>
+                            <th>Business</th>
+                            <th>Category</th>
+                            <th>Region</th>
+                            <th>Status</th>
+                            <th>Listing Tier</th>
+                            <th>Created</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var biz in Model.Businesses)
+                        {
+                            var latestListing = biz.Listings.OrderByDescending(l => l.StartDate).FirstOrDefault();
+                            <tr>
+                                <td data-label="Business"><a href="/Business/@biz.BusinessId">@biz.Name</a></td>
+                                <td data-label="Category">@biz.Category?.Name</td>
+                                <td data-label="Region">@biz.Region</td>
+                                <td data-label="Status">
+                                    <span class="badge @(biz.Status == "approved" ? "badge--approved" : biz.Status == "rejected" ? "badge--rejected" : "badge--pending")">@biz.Status</span>
+                                </td>
+                                <td data-label="Listing Tier">
+                                    @if (latestListing is not null)
+                                    {
+                                        var tierClass = latestListing.Tier == "featured" ? "badge--featured" : latestListing.Tier == "premium" ? "badge--premium" : "badge--free";
+                                        <span class="badge @tierClass">@latestListing.Tier</span>
+                                        @if (latestListing.PaymentStatus == "pending")
+                                        {
+                                            <span class="badge badge--pending">payment pending</span>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <span class="badge badge--free">free</span>
+                                    }
+                                </td>
+                                <td data-label="Created">@biz.CreatedAt.ToString("dd MMM yyyy")</td>
+                                <td data-label="Actions">
+                                    <div class="admin-action-row">
+                                        <a href="/BusinessOwner/Edit/@biz.BusinessId" class="btn btn--outline btn--sm">Edit</a>
+                                        @if (biz.Status == "pending")
+                                        {
+                                            <form method="post">
+                                                <input type="hidden" name="id" value="@biz.BusinessId" />
+                                                <button type="submit" asp-page-handler="Approve" class="btn btn--primary btn--sm">Approve</button>
+                                            </form>
+                                            <form method="post">
+                                                <input type="hidden" name="id" value="@biz.BusinessId" />
+                                                <button type="submit" asp-page-handler="Reject" class="btn btn--outline btn--sm">Reject</button>
+                                            </form>
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </section>
+</div>

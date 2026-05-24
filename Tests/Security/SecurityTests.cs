@@ -151,6 +151,23 @@ public class SecurityTests : IClassFixture<LebcowWebFactory>
         Assert.NotEqual(HttpStatusCode.OK, response.StatusCode);
     }
 
+    [Fact]
+    [Trait("Category", "Security")]
+    public async Task PostEvents_WithoutAntiForgeryToken_IsRejected()
+    {
+        var formData = new FormUrlEncodedContent(new[]
+        {
+            new KeyValuePair<string, string>("Input.Title", "Security test event"),
+            new KeyValuePair<string, string>("Input.Description", "Security validation for CSRF protection on event publishing endpoint."),
+            new KeyValuePair<string, string>("Input.Location", "Bloemfontein"),
+            new KeyValuePair<string, string>("Input.Date", DateTime.UtcNow.AddDays(3).ToString("yyyy-MM-ddTHH:mm"))
+        });
+
+        var response = await _client.PostAsync("/Events", formData);
+
+        Assert.NotEqual(HttpStatusCode.OK, response.StatusCode);
+    }
+
     // ── A07: Authentication Failures ─────────────────────────────────────
 
     [Fact]

@@ -19,11 +19,15 @@ public class ForumModel : PageModel
     }
 
     public IReadOnlyList<ForumPost> Posts { get; private set; } = [];
+    public HashSet<Guid> AdminAuthorIds { get; private set; } = [];
     public int TotalPages { get; private set; }
     private const int PageSize = 10;
 
     [BindProperty(SupportsGet = true)]
     public int PageNumber { get; set; } = 1;
+
+    [BindProperty(SupportsGet = true)]
+    public bool PrioritizeOfficial { get; set; }
 
     [BindProperty]
     public string NewPostTitle { get; set; } = string.Empty;
@@ -33,6 +37,21 @@ public class ForumModel : PageModel
 
     public async Task OnGetAsync()
     {
+        var adminRoleId = await _db.Roles
+            .Where(r => r.Name == "Admin")
+            .Select(r => r.Id)
+            .FirstOrDefaultAsync();
+
+        if (adminRoleId != Guid.Empty)
+        {
+            var adminUserIds = await _db.UserRoles
+                .Where(ur => ur.RoleId == adminRoleId)
+                .Select(ur => ur.UserId)
+                .ToListAsync();
+
+            AdminAuthorIds = adminUserIds.ToHashSet();
+        }
+
         var totalCount = await _db.ForumPosts.CountAsync();
         TotalPages = (int)Math.Ceiling(totalCount / (double)PageSize);
         PageNumber = Math.Max(1, Math.Min(PageNumber, TotalPages == 0 ? 1 : TotalPages));
@@ -43,6 +62,14 @@ public class ForumModel : PageModel
             .Skip((PageNumber - 1) * PageSize)
             .Take(PageSize)
             .ToListAsync();
+
+        if (PrioritizeOfficial && Posts.Count > 0)
+        {
+            Posts = Posts
+                .OrderByDescending(p => AdminAuthorIds.Contains(p.AuthorId))
+                .ThenByDescending(p => p.CreatedAt)
+                .ToList();
+        }
     }
 
     public async Task<IActionResult> OnPostAsync()

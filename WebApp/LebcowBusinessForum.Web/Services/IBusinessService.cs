@@ -7,6 +7,7 @@ public interface IBusinessService
     Task<IReadOnlyList<Business>> GetByOwnerAsync(Guid ownerId);
     Task<Business?> GetByIdAsync(Guid businessId);
     Task CreateAsync(Business business);
+    Task UpdateAsync(Business business);
     Task<bool> ApproveAsync(Guid businessId, Guid adminUserId);
     Task<bool> RejectAsync(Guid businessId, Guid adminUserId);
     Task<bool> IsOwnerAsync(Guid businessId, Guid userId);

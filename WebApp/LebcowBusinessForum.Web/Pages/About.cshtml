@@ -1,0 +1,116 @@
+@page
+@{
+    ViewData["Title"] = "About Us";
+}
+
+<section class="hero" aria-labelledby="about-hero-title">
+    <div class="hero__inner">
+        <p class="mb-2">Lebcow Business Forum</p>
+        <h1 id="about-hero-title" class="hero__title">Built to help South African local business grow</h1>
+        <p class="hero__subtitle">We connect people with trusted businesses, highlight local events, and keep community feedback transparent and useful.</p>
+        <div class="hero__search" role="group" aria-label="About page quick actions">
+            <a href="/Browse" class="btn btn--accent">Browse Businesses</a>
+            <a href="/Account/Register" class="btn btn--outline">Join for Free</a>
+            <a href="/Contact" class="btn btn--outline">Contact Team</a>
+        </div>
+    </div>
+</section>
+
+<div class="container py-5">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+        <ol>
+            <li><a href="/">Home</a></li>
+            <li aria-current="page">About</li>
+        </ol>
+    </nav>
+
+    <div class="row g-4 mt-1">
+        <div class="col-lg-8">
+            <section class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <h2>Who We Are</h2>
+                    <p class="lead mb-2">
+                        Lebcow Business Forum is a South African online directory and community platform dedicated to connecting
+                        local businesses with customers across the country.
+                    </p>
+                    <p class="mb-0">
+                        Founded to empower small and medium enterprises, we provide a space where businesses can list their
+                        services, connect with customers, and grow their presence in the local economy.
+                    </p>
+                </div>
+            </section>
+
+            <section class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <h2>Our Mission</h2>
+                    <p class="mb-0">
+                        Our mission is to make it easier for South African consumers to discover and support local businesses,
+                        while giving business owners the tools they need to reach their audience and build their brand online.
+                    </p>
+                </div>
+            </section>
+
+            <section class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <h2>What We Offer</h2>
+                    <ul class="list-group list-group-flush mb-0">
+                        <li class="list-group-item"><strong>Business Directory</strong> - Browse verified local businesses across South Africa.</li>
+                        <li class="list-group-item"><strong>Reviews and Ratings</strong> - Community feedback to help confident decisions.</li>
+                        <li class="list-group-item"><strong>Events</strong> - Discover business networking events and local meetups.</li>
+                        <li class="list-group-item"><strong>Premium Listings</strong> - Increase visibility with featured placement options.</li>
+                        <li class="list-group-item"><strong>Community Forum</strong> - Share ideas and collaborate with business owners and customers.</li>
+                    </ul>
+                </div>
+            </section>
+
+            <section class="card shadow-sm">
+                <div class="card-body">
+                    <h2>Get Involved</h2>
+                    <p>
+                        Whether you are a business owner looking to grow your customer base, or a customer searching for
+                        quality local services, Lebcow Business Forum is your community.
+                    </p>
+                    <div class="d-flex flex-wrap gap-2 mt-3">
+                        <a href="/Account/Register" class="btn btn--primary">Join for Free</a>
+                        <a href="/Browse" class="btn btn--outline">Browse Businesses</a>
+                        <a href="/Contact" class="btn btn--outline">Contact Us</a>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <aside class="col-lg-4">
+            <section class="card shadow-sm mb-4" aria-labelledby="about-quick-facts">
+                <div class="card-body">
+                    <h2 id="about-quick-facts" class="h5">Quick Facts</h2>
+                    <div class="admin-kpi-grid admin-kpi-grid--dense mt-3" role="list">
+                        <article class="admin-kpi-card" role="listitem">
+                            <span class="admin-kpi-card__label">Coverage</span>
+                            <strong class="admin-kpi-card__value">9 Provinces</strong>
+                        </article>
+                        <article class="admin-kpi-card" role="listitem">
+                            <span class="admin-kpi-card__label">Focus</span>
+                            <strong class="admin-kpi-card__value">SME Growth</strong>
+                        </article>
+                        <article class="admin-kpi-card" role="listitem">
+                            <span class="admin-kpi-card__label">Model</span>
+                            <strong class="admin-kpi-card__value">Community Led</strong>
+                        </article>
+                        <article class="admin-kpi-card" role="listitem">
+                            <span class="admin-kpi-card__label">Listing</span>
+                            <strong class="admin-kpi-card__value">Free Entry</strong>
+                        </article>
+                    </div>
+                </div>
+            </section>
+
+            <section class="card shadow-sm">
+                <div class="card-body">
+                    <h2 class="h5">Need help?</h2>
+                    <p class="mb-3">Have questions or feedback? Reach out and we will guide you.</p>
+                    <a href="/Contact" class="btn btn--outline btn--full">Get in Touch</a>
+                </div>
+            </section>
+        </aside>
+    </div>
+</div>

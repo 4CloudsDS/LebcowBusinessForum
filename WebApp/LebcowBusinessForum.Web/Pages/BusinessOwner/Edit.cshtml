@@ -1,0 +1,74 @@
+@page "{id:guid}"
+@model LebcowBusinessForum.Web.Pages.BusinessOwner.EditModel
+@{
+    ViewData["Title"] = "Edit Business";
+}
+
+<div class="container py-5" style="max-width:700px;">
+    <h1 class="mb-2">Edit Business</h1>
+    @if (Model.Business is not null)
+    {
+        <p class="text-muted mb-4">
+            Editing <strong>@Model.Business.Name</strong>.
+            @if (!User.IsInRole("Admin"))
+            {
+                <span class="text-warning">Saving will reset the listing to <strong>pending</strong> until an admin approves the changes.</span>
+            }
+        </p>
+    }
+
+    <form method="post">
+        <div asp-validation-summary="All" class="text-danger mb-3"></div>
+
+        <div class="mb-3">
+            <label asp-for="Input.Name" class="form-label"></label>
+            <input asp-for="Input.Name" class="form-control" />
+            <span asp-validation-for="Input.Name" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="Input.CategoryId" class="form-label"></label>
+            <select asp-for="Input.CategoryId" class="form-select"
+                    asp-items="@(new SelectList(Model.Categories, "CategoryId", "Name"))">
+                <option value="">— Select category —</option>
+            </select>
+            <span asp-validation-for="Input.CategoryId" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="Input.Description" class="form-label"></label>
+            <textarea asp-for="Input.Description" class="form-control" rows="4"></textarea>
+            <span asp-validation-for="Input.Description" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="Input.Address" class="form-label"></label>
+            <input asp-for="Input.Address" class="form-control" />
+            <span asp-validation-for="Input.Address" class="text-danger"></span>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label asp-for="Input.Phone" class="form-label"></label>
+                <input asp-for="Input.Phone" class="form-control" />
+                <span asp-validation-for="Input.Phone" class="text-danger"></span>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label asp-for="Input.Email" class="form-label"></label>
+                <input asp-for="Input.Email" class="form-control" />
+                <span asp-validation-for="Input.Email" class="text-danger"></span>
+            </div>
+        </div>
+
+        <div class="mb-4">
+            <label asp-for="Input.Website" class="form-label"></label>
+            <input asp-for="Input.Website" class="form-control" placeholder="https://..." />
+            <span asp-validation-for="Input.Website" class="text-danger"></span>
+        </div>
+
+        <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary">Save Changes</button>
+            <a asp-page="/Account/Dashboard" class="btn btn-outline-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
