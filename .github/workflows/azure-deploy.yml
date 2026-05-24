@@ -284,7 +284,8 @@ jobs:
       - name: Ensure App Service identity has Key Vault Secrets User role
         run: |
           # Idempotent — safe to run on every deploy even if infra was not re-provisioned
-          PRINCIPAL_ID=$(az webapp identity show \
+          # identity assign is a no-op if already enabled
+          PRINCIPAL_ID=$(az webapp identity assign \
             --name "${{ env.WEBAPP_NAME }}" \
             --resource-group "${{ env.RESOURCE_GROUP }}" \
             --query "principalId" -o tsv)
