@@ -1,0 +1,271 @@
+# ============================================================
+# azure-deploy.yml — LebcowBusinessForum CI/CD Pipeline
+# ============================================================
+# Project:     LebcowBusinessForum
+# Runtime:     .NET 8.0
+# Region:      southafricanorth
+# App Service: app-lebcowbusinessforum-web  (rg-lebcowbusinessforum-prod)
+#
+# ── MANUAL PREREQUISITE ──────────────────────────────────────
+# Before this workflow can deploy, you must add the following
+# secret to the GitHub repository:
+#
+#   AZURE_WEBAPP_PUBLISH_PROFILE
+#     Source: Azure Portal > App Service > app-lebcowbusinessforum-web
+#             > Get publish profile
+#     Setting: GitHub repo > Settings > Secrets and variables
+#              > Actions > New repository secret
+#
+# Also required:
+#   AZURE_CREDENTIALS   — Service principal JSON (az ad sp create-for-rbac)
+#   PG_ADMIN_PASSWORD   — PostgreSQL admin password (first-run infra provisioning)
+# ─────────────────────────────────────────────────────────────
+
+name: Deploy — LebcowBusinessForum (prod)
+
+on:
+  push:
+    branches:
+      - master
+      - main
+      - release/candidate
+  workflow_dispatch:
+
+env:
+  DOTNET_VERSION:      '8.0.x'
+  PROJECT_PATH:        'WebApp/LebcowBusinessForum.Web/LebcowBusinessForum.Web.csproj'
+  SOLUTION_PATH:       'WebApp/LebcowBusinessForum.sln'
+  TEST_PROJECT_PATH:   'Tests/Tests.csproj'
+  WEBAPP_NAME:         'app-lebcowbusinessforum-web'
+  RESOURCE_GROUP:      'rg-lebcowbusinessforum-prod'
+  BICEP_FILE:          'infra/main.bicep'
+  PG_SERVER_NAME:      'pg-lebcowbusinessforum-prod'
+  KV_NAME:             'kv-lebcow-prod'
+  AZURE_LOCATION:      'southafricanorth'
+
+jobs:
+
+  # ── 1. BUILD & TEST ────────────────────────────────────────
+  build:
+    name: Build and Test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ github.workspace }}
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Setup .NET ${{ env.DOTNET_VERSION }}
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore dependencies
+        run: dotnet restore "${{ env.SOLUTION_PATH }}"
+
+      - name: Build (Release)
+        run: dotnet build "${{ env.SOLUTION_PATH }}" --configuration Release --no-restore
+
+      - name: Run tests
+        run: |
+          if [ -f "${{ env.TEST_PROJECT_PATH }}" ]; then
+            dotnet test "${{ env.TEST_PROJECT_PATH }}" --configuration Release --no-build --verbosity normal
+          else
+            echo "No test project found — skipping."
+          fi
+
+      - name: Publish app
+        run: dotnet publish "${{ env.PROJECT_PATH }}" --configuration Release --no-restore --output ./publish
+
+      - name: Upload publish artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: webapp-publish
+          path: ./publish
+          retention-days: 1
+
+  # ── 2. DETECT INFRASTRUCTURE READINESS ────────────────────
+  detect_infra:
+    name: Detect Infrastructure Readiness
+    runs-on: ubuntu-latest
+    needs: build
+    outputs:
+      pg_exists:    ${{ steps.check.outputs.pg_exists }}
+      kv_exists:    ${{ steps.check.outputs.kv_exists }}
+      infra_ready:  ${{ steps.check.outputs.infra_ready }}
+
+    steps:
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Check existing infrastructure
+        id: check
+        run: |
+          # Check PostgreSQL server
+          PG_EXISTS=$(az postgres flexible-server show \
+            --name "${{ env.PG_SERVER_NAME }}" \
+            --resource-group "${{ env.RESOURCE_GROUP }}" \
+            --query "name" -o tsv 2>/dev/null || echo "")
+
+          if [ -n "$PG_EXISTS" ]; then
+            echo "pg_exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "pg_exists=false" >> $GITHUB_OUTPUT
+          fi
+
+          # Check Key Vault
+          KV_EXISTS=$(az keyvault show \
+            --name "${{ env.KV_NAME }}" \
+            --resource-group "${{ env.RESOURCE_GROUP }}" \
+            --query "name" -o tsv 2>/dev/null || echo "")
+
+          if [ -n "$KV_EXISTS" ]; then
+            echo "kv_exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "kv_exists=false" >> $GITHUB_OUTPUT
+          fi
+
+          # Infrastructure is ready when both PG and KV exist
+          if [ -n "$PG_EXISTS" ] && [ -n "$KV_EXISTS" ]; then
+            echo "infra_ready=true" >> $GITHUB_OUTPUT
+          else
+            echo "infra_ready=false" >> $GITHUB_OUTPUT
+          fi
+
+  # ── 3. DEPLOY INFRASTRUCTURE (conditional) ────────────────
+  deploy_infra:
+    name: Deploy Infrastructure (Bicep — if needed)
+    runs-on: ubuntu-latest
+    needs: detect_infra
+    if: needs.detect_infra.outputs.infra_ready == 'false'
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Create resource group if absent
+        run: |
+          az group create \
+            --name "${{ env.RESOURCE_GROUP }}" \
+            --location "${{ env.AZURE_LOCATION }}"
+
+      - name: What-if (dry run)
+        run: |
+          az deployment group what-if \
+            --resource-group "${{ env.RESOURCE_GROUP }}" \
+            --template-file "${{ env.BICEP_FILE }}" \
+            --parameters pgAdminPassword="${{ secrets.PG_ADMIN_PASSWORD }}"
+
+      - name: Deploy Bicep
+        run: |
+          az deployment group create \
+            --resource-group "${{ env.RESOURCE_GROUP }}" \
+            --template-file "${{ env.BICEP_FILE }}" \
+            --parameters pgAdminPassword="${{ secrets.PG_ADMIN_PASSWORD }}" \
+            --name "lbf-deploy-${{ github.run_number }}"
+
+      - name: Set App Service connection string from Key Vault
+        run: |
+          # Retrieve the secret URI for DefaultConnection from Key Vault
+          SECRET_URI=$(az keyvault secret show \
+            --vault-name "${{ env.KV_NAME }}" \
+            --name "DefaultConnection" \
+            --query "id" -o tsv)
+
+          # Set App Service connection string as Key Vault reference
+          az webapp config connection-string set \
+            --resource-group "${{ env.RESOURCE_GROUP }}" \
+            --name "${{ env.WEBAPP_NAME }}" \
+            --settings DefaultConnection="@Microsoft.KeyVault(SecretUri=${SECRET_URI})" \
+            --connection-string-type PostgreSQL
+
+  # ── 4. DATABASE MIGRATION (if pending) ────────────────────
+  migrate_db:
+    name: Run EF Database Migration (if pending)
+    runs-on: ubuntu-latest
+    needs: [build, detect_infra, deploy_infra]
+    # Run after infra deploy OR when infra was already ready
+    if: always() && (needs.build.result == 'success') && (needs.detect_infra.result == 'success')
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Setup .NET ${{ env.DOTNET_VERSION }}
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Get database connection string
+        id: get_conn
+        run: |
+          CONN=$(az keyvault secret show \
+            --vault-name "${{ env.KV_NAME }}" \
+            --name "DefaultConnection" \
+            --query "value" -o tsv 2>/dev/null || echo "")
+          echo "::add-mask::$CONN"
+          echo "connection_string=$CONN" >> $GITHUB_OUTPUT
+
+      - name: Restore dotnet-ef tool
+        run: dotnet tool restore || dotnet tool install --global dotnet-ef
+
+      - name: Apply pending migrations
+        env:
+          ConnectionStrings__DefaultConnection: ${{ steps.get_conn.outputs.connection_string }}
+        run: |
+          cd WebApp
+          PENDING=$(dotnet ef migrations list \
+            --project LebcowBusinessForum.Web/LebcowBusinessForum.Web.csproj \
+            --no-build 2>/dev/null | grep -v "^Build" | grep -v "\[applied\]" | wc -l || echo "0")
+
+          if [ "$PENDING" -gt "0" ]; then
+            echo "Applying $PENDING pending migration(s)..."
+            dotnet ef database update \
+              --project LebcowBusinessForum.Web/LebcowBusinessForum.Web.csproj \
+              --no-build
+          else
+            echo "No pending migrations — skipping."
+          fi
+
+  # ── 5. DEPLOY APPLICATION ─────────────────────────────────
+  deploy_app:
+    name: Deploy Application to Azure App Service
+    runs-on: ubuntu-latest
+    needs: migrate_db
+    if: always() && needs.migrate_db.result == 'success'
+
+    steps:
+      - name: Download publish artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: webapp-publish
+          path: ./publish
+
+      - name: Deploy to Azure Web App
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name:        ${{ env.WEBAPP_NAME }}
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          package:         ./publish
+
+      # ── MANUAL STEP REMINDER ──────────────────────────────
+      # If AZURE_WEBAPP_PUBLISH_PROFILE is not yet set, the above step will fail.
+      # To add it:
+      #   1. Go to Azure Portal > App Service > app-lebcowbusinessforum-web > Get publish profile
+      #   2. Download the .PublishSettings file
+      #   3. Go to GitHub repo > Settings > Secrets and variables > Actions
+      #   4. Create secret: AZURE_WEBAPP_PUBLISH_PROFILE = (contents of the file)
