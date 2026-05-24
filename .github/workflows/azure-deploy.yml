@@ -35,7 +35,7 @@ env:
   DOTNET_VERSION:      '8.0.x'
   PROJECT_PATH:        'WebApp/LebcowBusinessForum.Web/LebcowBusinessForum.Web.csproj'
   SOLUTION_PATH:       'WebApp/LebcowBusinessForum.sln'
-  TEST_PROJECT_PATH:   'Tests/Tests.csproj'
+  TEST_PROJECT_PATH:   'Tests/LebcowBusinessForum.Tests.csproj'
   WEBAPP_NAME:         'app-lebcowbusinessforum-web'
   RESOURCE_GROUP:      'rg-lebcowbusinessforum-prod'
   BICEP_FILE:          'infra/main.bicep'
