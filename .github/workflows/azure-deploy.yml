@@ -195,12 +195,13 @@ jobs:
             --name "lbf-deploy-${{ github.run_number }}" \
             --query "properties.outputs.pgSecretUri.value" -o tsv)
 
-          # Set App Service connection string as Key Vault reference
-          az webapp config connection-string set \
+          # Use appsettings (double-underscore key) so .NET's config system reads it
+          # as ConnectionStrings:DefaultConnection.  connection-string-type=PostgreSQL
+          # maps to POSTGRESQLCONNSTR_ which .NET does NOT map automatically.
+          az webapp config appsettings set \
             --resource-group "${{ env.RESOURCE_GROUP }}" \
             --name "${{ env.WEBAPP_NAME }}" \
-            --settings DefaultConnection="@Microsoft.KeyVault(SecretUri=${SECRET_URI})" \
-            --connection-string-type PostgreSQL
+            --settings "ConnectionStrings__DefaultConnection=@Microsoft.KeyVault(SecretUri=${SECRET_URI})"
 
   # ── 4. DATABASE MIGRATION (if pending) ────────────────────
   migrate_db:
@@ -223,6 +224,17 @@ jobs:
         uses: azure/login@v2
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Allow GitHub Actions runner IP in PG firewall
+        run: |
+          RUNNER_IP=$(curl -s https://api.ipify.org)
+          echo "Runner IP: $RUNNER_IP"
+          az postgres flexible-server firewall-rule create \
+            --resource-group "${{ env.RESOURCE_GROUP }}" \
+            --server-name "${{ env.PG_SERVER_NAME }}" \
+            --rule-name "github-actions-runner" \
+            --start-ip-address "$RUNNER_IP" \
+            --end-ip-address "$RUNNER_IP"
 
       - name: Get database connection string
         id: get_conn
@@ -261,6 +273,15 @@ jobs:
           else
             echo "No pending migrations — skipping."
           fi
+
+      - name: Remove GitHub Actions runner IP from PG firewall
+        if: always()
+        run: |
+          az postgres flexible-server firewall-rule delete \
+            --resource-group "${{ env.RESOURCE_GROUP }}" \
+            --server-name "${{ env.PG_SERVER_NAME }}" \
+            --rule-name "github-actions-runner" \
+            --yes 2>/dev/null || echo "Firewall rule not found — skipping."
 
   # ── 5. DEPLOY APPLICATION ─────────────────────────────────
   deploy_app:
@@ -301,6 +322,17 @@ jobs:
             --assignee-principal-type ServicePrincipal \
             --scope "$KV_ID" 2>/dev/null \
             || echo "Role assignment already exists — skipping."
+
+      - name: Set connection string to Key Vault reference (idempotent)
+        run: |
+          # Runs on every deploy — ensures the KV reference is always correct
+          # even when deploy_infra was skipped (infra already existed).
+          # appsettings with double-underscore is what .NET reads as ConnectionStrings:DefaultConnection.
+          SECRET_URI="https://${{ env.KV_NAME }}.vault.azure.net/secrets/DefaultConnection"
+          az webapp config appsettings set \
+            --resource-group "${{ env.RESOURCE_GROUP }}" \
+            --name "${{ env.WEBAPP_NAME }}" \
+            --settings "ConnectionStrings__DefaultConnection=@Microsoft.KeyVault(SecretUri=${SECRET_URI})"
 
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
