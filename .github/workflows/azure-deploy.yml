@@ -234,6 +234,9 @@ jobs:
           echo "::add-mask::$CONN"
           echo "connection_string=$CONN" >> $GITHUB_OUTPUT
 
+      - name: Restore web project dependencies
+        run: dotnet restore "${{ env.PROJECT_PATH }}"
+
       - name: Install dotnet-ef tool
         run: |
           dotnet tool install --global dotnet-ef
