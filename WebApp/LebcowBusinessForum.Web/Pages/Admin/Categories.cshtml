@@ -1,0 +1,103 @@
+@page
+@model LebcowBusinessForum.Web.Pages.Admin.CategoriesModel
+@{
+    ViewData["Title"] = "Admin — Manage Categories";
+}
+
+<div class="container admin-page admin-shell py-4">
+    <header class="admin-header">
+        <div>
+            <h1 class="page-title">Manage Categories</h1>
+            <p class="admin-subtitle">Create top-level and child categories, and keep your hierarchy clean.</p>
+        </div>
+        <div class="admin-header__actions">
+            <a href="/Admin" class="btn btn--outline btn--sm">Back to Admin</a>
+        </div>
+    </header>
+
+    @if (TempData["Message"] is string msg)
+    {
+        <div class="alert alert--success" role="alert" aria-live="polite">
+            <span class="alert__icon" aria-hidden="true">✓</span>
+            @msg
+            <button type="button" class="alert__dismiss" aria-label="Dismiss message" onclick="this.parentElement.remove()">×</button>
+        </div>
+    }
+    @if (TempData["Error"] is string err)
+    {
+        <div class="alert alert--danger" role="alert" aria-live="polite">
+            <span class="alert__icon" aria-hidden="true">✕</span>
+            @err
+            <button type="button" class="alert__dismiss" aria-label="Dismiss message" onclick="this.parentElement.remove()">×</button>
+        </div>
+    }
+
+    <section class="admin-two-col">
+        <article class="admin-panel">
+            <div class="admin-panel__header">
+                <h2>Add Category</h2>
+                <p>Create a new top-level category or nest it under an existing one.</p>
+            </div>
+            <form method="post" asp-page-handler="Create" class="admin-form-stack">
+                <div asp-validation-summary="All" class="field-error"></div>
+                <div class="form-group">
+                    <label asp-for="Input.Name" class="required">Category Name</label>
+                    <input asp-for="Input.Name" class="form-control" placeholder="e.g. Retail" />
+                    <span asp-validation-for="Input.Name" class="field-error"></span>
+                </div>
+                <div class="form-group">
+                    <label asp-for="Input.ParentCategoryId">Parent Category (optional)</label>
+                    <select asp-for="Input.ParentCategoryId" class="form-control" asp-items="@(new SelectList(Model.AllCategories, "CategoryId", "Name"))">
+                        <option value="">Top-level category</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn--primary btn--full">Create Category</button>
+            </form>
+        </article>
+
+        <article class="admin-panel">
+            <div class="admin-panel__header">
+                <h2>Category Tree</h2>
+                <p>@Model.TopLevel.Count top-level category(ies).</p>
+            </div>
+
+            @if (Model.TopLevel.Count == 0)
+            {
+                <div class="admin-empty-state">No categories yet.</div>
+            }
+            else
+            {
+                <ul class="admin-category-tree">
+                    @foreach (var cat in Model.TopLevel)
+                    {
+                        <li class="admin-category-tree__item">
+                            <div class="admin-category-tree__row">
+                                <strong>@cat.Name</strong>
+                                <form method="post" asp-page-handler="Delete" onsubmit="return confirm('Delete @cat.Name?')">
+                                    <input type="hidden" name="id" value="@cat.CategoryId" />
+                                    <button type="submit" class="btn btn--outline btn--sm">Delete</button>
+                                </form>
+                            </div>
+
+                            @if (cat.SubCategories.Count > 0)
+                            {
+                                <ul class="admin-category-tree__children">
+                                    @foreach (var sub in cat.SubCategories.OrderBy(s => s.Name))
+                                    {
+                                        <li class="admin-category-tree__child">
+                                            <span>@sub.Name</span>
+                                            <form method="post" asp-page-handler="Delete" onsubmit="return confirm('Delete @sub.Name?')">
+                                                <input type="hidden" name="id" value="@sub.CategoryId" />
+                                                <button type="submit" class="btn btn--outline btn--sm">Delete</button>
+                                            </form>
+                                        </li>
+                                    }
+                                </ul>
+                            }
+                        </li>
+                    }
+                </ul>
+            }
+        </article>
+    </section>
+</div>

@@ -26,6 +26,11 @@ public class SmokeTests : IClassFixture<LebcowWebFactory>
     [InlineData("/Browse")]
     [InlineData("/Events")]
     [InlineData("/Forum")]
+    [InlineData("/About")]
+    [InlineData("/Contact")]
+    [InlineData("/Privacy")]
+    [InlineData("/Terms")]
+    [InlineData("/Account/Logout")]
     [InlineData("/Account/Login")]
     [InlineData("/Account/Register")]
     public async Task PublicRoute_Returns_SuccessOrRedirect(string url)
@@ -117,6 +122,30 @@ public class SmokeTests : IClassFixture<LebcowWebFactory>
             response.StatusCode == HttpStatusCode.Redirect ||
             response.StatusCode == HttpStatusCode.Found,
             $"Forum?pageNumber=1 returned {(int)response.StatusCode}");
+    }
+
+    [Fact]
+    [Trait("Category", "Smoke")]
+    public async Task EventsCreate_AnonymousPost_DoesNotReturnServerError()
+    {
+        // Ensure event publish entry point is resilient for anonymous submissions.
+        var getResponse = await _client.GetAsync("/Events");
+        getResponse.EnsureSuccessStatusCode();
+        var html = await getResponse.Content.ReadAsStringAsync();
+        var token = ExtractAntiForgeryToken(html);
+
+        var content = new FormUrlEncodedContent(new[]
+        {
+            new KeyValuePair<string, string>("Input.Title", "Smoke Event"),
+            new KeyValuePair<string, string>("Input.Description", "Smoke description for event creation flow"),
+            new KeyValuePair<string, string>("Input.Location", "Bloemfontein"),
+            new KeyValuePair<string, string>("Input.Date", DateTime.UtcNow.AddDays(2).ToString("yyyy-MM-ddTHH:mm")),
+            new KeyValuePair<string, string>("__RequestVerificationToken", token ?? ""),
+        });
+
+        var response = await _client.PostAsync("/Events", content);
+
+        Assert.True((int)response.StatusCode < 500, $"POST /Events returned {(int)response.StatusCode}");
     }
 
     [Fact]

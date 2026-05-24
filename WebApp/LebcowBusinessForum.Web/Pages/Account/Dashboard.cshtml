@@ -5,24 +5,101 @@
 }
 
 <div class="container dashboard-page">
-    <h1 class="page-title">My Dashboard</h1>
+    <header class="dashboard-hero">
+        <div>
+            <h1 class="page-title">My Dashboard</h1>
+            <p class="dashboard-hero__subtitle">Manage your businesses, monitor progress, and take action quickly.</p>
+        </div>
+        <div class="dashboard-hero__actions">
+            <a href="/BusinessOwner/Create" class="btn btn--primary">Add a Business</a>
+            @if (Model.IsAdmin)
+            {
+                <a href="/Admin" class="btn btn--outline">Open Admin Dashboard</a>
+            }
+        </div>
+    </header>
 
+    @if (Model.StatusMessage is not null)
+    {
+        <div class="alert alert--success" role="alert" aria-live="polite">
+            <span class="alert__icon" aria-hidden="true">✓</span>
+            @Model.StatusMessage
+            <button type="button" class="alert__dismiss" aria-label="Dismiss message" onclick="this.parentElement.remove()">×</button>
+        </div>
+    }
+
+    @if (Model.IsAdmin)
+    {
+        <section class="dashboard-section" aria-labelledby="admin-heading">
+            <h2 id="admin-heading">Admin Overview</h2>
+            <p class="dashboard-section__hint">Review critical platform metrics and jump straight to moderation tools.</p>
+            <div class="dashboard-metric-grid">
+                <article class="dashboard-metric-card">
+                    <span class="dashboard-metric-card__label">Total users</span>
+                    <strong class="dashboard-metric-card__value">@Model.AdminTotalUsers</strong>
+                </article>
+                <article class="dashboard-metric-card">
+                    <span class="dashboard-metric-card__label">Total businesses</span>
+                    <strong class="dashboard-metric-card__value">@Model.AdminTotalBusinesses</strong>
+                </article>
+                <article class="dashboard-metric-card">
+                    <span class="dashboard-metric-card__label">Pending approvals</span>
+                    <strong class="dashboard-metric-card__value">@Model.AdminPendingBusinesses</strong>
+                </article>
+                <article class="dashboard-metric-card">
+                    <span class="dashboard-metric-card__label">Pending upgrades</span>
+                    <strong class="dashboard-metric-card__value">@Model.AdminPendingUpgrades</strong>
+                </article>
+            </div>
+            <div class="dashboard-actions-row">
+                <a href="/Admin" class="btn btn--primary">Open Admin Dashboard</a>
+                <a href="/BusinessOwner/Create" class="btn btn--outline">Add a Business</a>
+            </div>
+        </section>
+    }
+
+    @* My Businesses — shown for BusinessOwner, User (if they have any), and always with Add button *@
     <section class="dashboard-section" aria-labelledby="my-businesses-heading">
-        <h2 id="my-businesses-heading">My Businesses</h2>
+        <div class="dashboard-section__head">
+            <h2 id="my-businesses-heading">@(Model.IsBusinessOwner ? "Business Owner Dashboard" : "My Business Listings")</h2>
+            <span class="dashboard-section__count">@Model.MyBusinesses.Count listing(s)</span>
+        </div>
+
         @if (Model.MyBusinesses.Count == 0)
         {
-            <p>You have no listed businesses yet.</p>
-            <a href="/BusinessOwner/Create" class="btn btn--primary">Add a Business</a>
+            <div class="dashboard-empty">
+                <p>You have no listed businesses yet.</p>
+                <a href="/BusinessOwner/Create" class="btn btn--primary">Add a Business</a>
+            </div>
         }
         else
         {
-            <ul class="dashboard-business-list">
+            <ul class="dashboard-business-cards">
                 @foreach (var biz in Model.MyBusinesses)
                 {
-                    <li class="dashboard-business-item">
-                        <span class="dashboard-business-item__name">@biz.Name</span>
-                        <span class="status-badge status-badge--@biz.Status">@biz.Status</span>
-                        <a href="/BusinessOwner/Edit/@biz.BusinessId" class="btn btn--ghost btn--sm">Edit</a>
+                    var latestListing = biz.Listings.OrderByDescending(l => l.StartDate).FirstOrDefault();
+                    var tierLabel = latestListing?.Tier ?? "free";
+                    <li class="dashboard-business-card">
+                        <div class="dashboard-business-card__top">
+                            <strong class="dashboard-business-card__name">@biz.Name</strong>
+                            <span class="status-badge status-badge--@biz.Status">@biz.Status</span>
+                        </div>
+                        <div class="dashboard-business-card__meta">
+                            <span class="badge @(tierLabel == "featured" ? "badge--featured" : tierLabel == "premium" ? "badge--premium" : "badge--free")" title="Listing tier">@tierLabel</span>
+                            <span class="dashboard-business-card__region">@biz.Region</span>
+                        </div>
+                        @if (latestListing is not null && latestListing.PaymentStatus == "pending")
+                        {
+                            <span class="badge badge--pending" title="Awaiting payment/approval">payment pending</span>
+                        }
+                        <div class="dashboard-business-card__actions">
+                            <a href="/Business/@biz.BusinessId" class="btn btn--outline btn--sm">View</a>
+                            <a href="/BusinessOwner/Edit/@biz.BusinessId" class="btn btn--outline btn--sm">Edit</a>
+                            @if (Model.IsBusinessOwner || Model.IsAdmin)
+                            {
+                                <a href="/BusinessOwner/UpgradeListing/@biz.BusinessId" class="btn btn--primary btn--sm">Upgrade</a>
+                            }
+                        </div>
                     </li>
                 }
             </ul>
@@ -30,10 +107,16 @@
     </section>
 
     <section class="dashboard-section" aria-labelledby="saved-heading">
-        <h2 id="saved-heading">Saved Businesses</h2>
+        <div class="dashboard-section__head">
+            <h2 id="saved-heading">Saved Businesses</h2>
+            <span class="dashboard-section__count">@Model.SavedBusinesses.Count saved</span>
+        </div>
         @if (Model.SavedBusinesses.Count == 0)
         {
-            <p>You have no saved businesses.</p>
+            <div class="dashboard-empty">
+                <p>You have no saved businesses.</p>
+                <a href="/Browse" class="btn btn--outline">Browse Businesses</a>
+            </div>
         }
         else
         {
@@ -46,3 +129,4 @@
         }
     </section>
 </div>
+

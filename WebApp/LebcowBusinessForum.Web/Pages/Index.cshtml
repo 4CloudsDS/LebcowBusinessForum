@@ -6,6 +6,10 @@
 
 <section class="hero" aria-labelledby="hero-heading">
     <div class="hero__inner">
+        @if (User.Identity?.IsAuthenticated == true)
+        {
+            <p class="hero__subtitle" style="margin-bottom:0.25rem;">Welcome back: @(Model.WelcomeName ?? "Member")</p>
+        }
         <h1 id="hero-heading" class="hero__title">
             Find Trusted South African Businesses
         </h1>
@@ -58,20 +62,22 @@
 </section>
 
 @functions {
-    static string GetCategoryIcon(string name) => name?.ToLowerInvariant() switch
+    static string GetCategoryIcon(string? name)
     {
-        var n when n.Contains("restaurant") || n.Contains("food") || n.Contains("eat") => "\uD83C\uDF7D\uFE0F",
-        var n when n.Contains("health") || n.Contains("medical") || n.Contains("clinic") => "\uD83C\uDFE5",
-        var n when n.Contains("legal") || n.Contains("law") || n.Contains("attorney") => "\u2696\uFE0F",
-        var n when n.Contains("retail") || n.Contains("shop") || n.Contains("store") => "\uD83D\uDECD\uFE0F",
-        var n when n.Contains("tech") || n.Contains("it") || n.Contains("digital") => "\uD83D\uDCBB",
-        var n when n.Contains("education") || n.Contains("school") || n.Contains("tutoring") => "\uD83C\uDF93",
-        var n when n.Contains("transport") || n.Contains("logistic") || n.Contains("delivery") => "\uD83D\uDE9A",
-        var n when n.Contains("beauty") || n.Contains("salon") || n.Contains("spa") => "\u2728",
-        var n when n.Contains("construction") || n.Contains("build") || n.Contains("plumb") => "\uD83D\uDD28",
-        var n when n.Contains("finance") || n.Contains("bank") || n.Contains("accounting") => "\uD83D\uDCB0",
-        _ => "\uD83C\uDFEA"
-    };
+        var n = (name ?? string.Empty).ToLowerInvariant();
+
+        if (n.Contains("restaurant") || n.Contains("food") || n.Contains("eat")) return "\uD83C\uDF7D\uFE0F";
+        if (n.Contains("health") || n.Contains("medical") || n.Contains("clinic")) return "\uD83C\uDFE5";
+        if (n.Contains("legal") || n.Contains("law") || n.Contains("attorney")) return "\u2696\uFE0F";
+        if (n.Contains("retail") || n.Contains("shop") || n.Contains("store")) return "\uD83D\uDECD\uFE0F";
+        if (n.Contains("tech") || n.Contains("it") || n.Contains("digital")) return "\uD83D\uDCBB";
+        if (n.Contains("education") || n.Contains("school") || n.Contains("tutoring")) return "\uD83C\uDF93";
+        if (n.Contains("transport") || n.Contains("logistic") || n.Contains("delivery")) return "\uD83D\uDE9A";
+        if (n.Contains("beauty") || n.Contains("salon") || n.Contains("spa")) return "\u2728";
+        if (n.Contains("construction") || n.Contains("build") || n.Contains("plumb")) return "\uD83D\uDD28";
+        if (n.Contains("finance") || n.Contains("bank") || n.Contains("accounting")) return "\uD83D\uDCB0";
+        return "\uD83C\uDFEA";
+    }
 }
 
 <section class="featured-section" aria-labelledby="featured-heading">

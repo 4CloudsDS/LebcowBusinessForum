@@ -1,68 +1,147 @@
-@page
+@page "{id:guid?}"
 @model LebcowBusinessForum.Web.Pages.EventsModel
 @{
-    ViewData["Title"] = "Upcoming Events";
+    ViewData["Title"] = Model.SelectedEvent is null ? "Upcoming Events" : Model.SelectedEvent.Title;
+}
+
+@if (Model.SelectedEvent is not null)
+{
+    <div class="container events-page">
+        <nav aria-label="Breadcrumb" class="breadcrumb">
+            <ol>
+                <li><a href="/">Home</a></li>
+                <li><a href="/Events">Events</a></li>
+                <li aria-current="page">@Model.SelectedEvent.Title</li>
+            </ol>
+        </nav>
+
+        <article class="event-item" style="padding:1.5rem;">
+            <time datetime="@Model.SelectedEvent.Date.ToString("yyyy-MM-dd")" class="event-item__date">
+                @Model.SelectedEvent.Date.ToString("d MMM yyyy")
+            </time>
+            <div class="event-item__details">
+                <h1 class="event-item__title">@Model.SelectedEvent.Title</h1>
+                <p class="event-item__location">@Model.SelectedEvent.Location</p>
+                @if (Model.SelectedEvent.Organizer != null)
+                {
+                    <p class="event-organiser">Organised by @(Model.SelectedEvent.Organizer.UserName ?? Model.SelectedEvent.Organizer.Email)</p>
+                }
+                <p class="event-item__description">@Model.SelectedEvent.Description</p>
+            </div>
+        </article>
+
+        <p style="margin-top:1rem;">
+            <a href="/Events" class="btn btn--ghost">Back to events</a>
+        </p>
+    </div>
+}
+else
+{
     var now = DateTime.UtcNow;
     var upcoming = Model.Events.Where(e => e.Date >= now).OrderBy(e => e.Date).ToList();
     var past = Model.Events.Where(e => e.Date < now).OrderByDescending(e => e.Date).ToList();
-}
 
-<div class="container events-page">
-    <h1 class="page-title">Upcoming Events</h1>
+    <div class="container events-page">
+        <h1 class="page-title">Upcoming Events</h1>
 
-    @if (!upcoming.Any())
-    {
-        <p role="status" class="no-results">No upcoming events at this time.</p>
-    }
-    else
-    {
-        <ul class="events-list events-list--full">
-            @foreach (var ev in upcoming)
-            {
-                <li class="event-item">
-                    <time datetime="@ev.Date.ToString("yyyy-MM-dd")" class="event-item__date">
-                        @ev.Date.ToString("d MMM yyyy")
-                    </time>
-                    <div class="event-item__details">
-                        <h2 class="event-item__title">
-                            <a href="/Events/@ev.EventId">@ev.Title</a>
-                        </h2>
-                        <p class="event-item__location">@ev.Location</p>
-                        @if (ev.Organizer != null)
-                        {
-                            <p class="event-organiser">Organised by @(ev.Organizer.UserName ?? ev.Organizer.Email)</p>
-                        }
-                        <p class="event-item__description">@ev.Description</p>
+        @if (Model.CanCreateEvents)
+        {
+            <section class="events-composer" aria-labelledby="create-event-heading">
+                <h2 id="create-event-heading">Create Event</h2>
+                @if (!ViewData.ModelState.IsValid)
+                {
+                    <div asp-validation-summary="All" class="alert alert--danger" role="alert"></div>
+                }
+                <form method="post" class="events-composer__form">
+                    <div class="form-group">
+                        <label asp-for="Input.Title" class="required">Title</label>
+                        <input asp-for="Input.Title" class="form-control" maxlength="200" />
+                        <span asp-validation-for="Input.Title" class="field-error"></span>
                     </div>
-                </li>
-            }
-        </ul>
-    }
+                    <div class="form-group">
+                        <label asp-for="Input.Description" class="required">Description</label>
+                        <textarea asp-for="Input.Description" class="form-control" rows="3"></textarea>
+                        <span asp-validation-for="Input.Description" class="field-error"></span>
+                    </div>
+                    <div class="events-composer__grid">
+                        <div class="form-group">
+                            <label asp-for="Input.Location" class="required">Location</label>
+                            <input asp-for="Input.Location" class="form-control" maxlength="500" />
+                            <span asp-validation-for="Input.Location" class="field-error"></span>
+                        </div>
+                        <div class="form-group">
+                            <label asp-for="Input.Date" class="required">Date &amp; Time (UTC)</label>
+                            <input asp-for="Input.Date" type="datetime-local" class="form-control" />
+                            <span asp-validation-for="Input.Date" class="field-error"></span>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn--primary">Publish Event</button>
+                </form>
+            </section>
+        }
+        else if (User.Identity?.IsAuthenticated == true)
+        {
+            <p class="events-access-note">Only Admin and BusinessOwner accounts can create events.</p>
+        }
+        else
+        {
+            <p class="events-access-note"><a href="/Account/Login">Sign in</a> as Admin or BusinessOwner to create events.</p>
+        }
 
-    @if (past.Any())
-    {
-        <div style="margin-top:var(--space-xl);">
-            <button type="button"
-                    class="btn btn--outline btn--sm"
-                    aria-expanded="false"
-                    aria-controls="past-events"
-                    onclick="var p=document.getElementById('past-events'),open=p.hidden;p.hidden=!open;this.setAttribute('aria-expanded',open);this.textContent=open?'Hide past events':'Show past events (@past.Count)';">
-                Show past events (@past.Count)
-            </button>
-            <ul id="past-events" class="events-list events-list--full" hidden style="margin-top:var(--space-md);opacity:.7;">
-                @foreach (var ev in past)
+        @if (!upcoming.Any())
+        {
+            <p role="status" class="no-results">No upcoming events at this time.</p>
+        }
+        else
+        {
+            <ul class="events-list events-list--full">
+                @foreach (var ev in upcoming)
                 {
                     <li class="event-item">
                         <time datetime="@ev.Date.ToString("yyyy-MM-dd")" class="event-item__date">
                             @ev.Date.ToString("d MMM yyyy")
                         </time>
                         <div class="event-item__details">
-                            <h2 class="event-item__title">@ev.Title</h2>
+                            <h2 class="event-item__title">
+                                <a href="/Events/@ev.EventId">@ev.Title</a>
+                            </h2>
                             <p class="event-item__location">@ev.Location</p>
+                            @if (ev.Organizer != null)
+                            {
+                                <p class="event-organiser">Organised by @(ev.Organizer.UserName ?? ev.Organizer.Email)</p>
+                            }
+                            <p class="event-item__description">@ev.Description</p>
                         </div>
                     </li>
                 }
             </ul>
-        </div>
-    }
-</div>
+        }
+
+        @if (past.Any())
+        {
+            <div style="margin-top:var(--space-xl);">
+                <button type="button"
+                        class="btn btn--outline btn--sm"
+                        aria-expanded="false"
+                        aria-controls="past-events"
+                        onclick="var p=document.getElementById('past-events'),open=p.hidden;p.hidden=!open;this.setAttribute('aria-expanded',open);this.textContent=open?'Hide past events':'Show past events (@past.Count)';">
+                    Show past events (@past.Count)
+                </button>
+                <ul id="past-events" class="events-list events-list--full" hidden style="margin-top:var(--space-md);opacity:.7;">
+                    @foreach (var ev in past)
+                    {
+                        <li class="event-item">
+                            <time datetime="@ev.Date.ToString("yyyy-MM-dd")" class="event-item__date">
+                                @ev.Date.ToString("d MMM yyyy")
+                            </time>
+                            <div class="event-item__details">
+                                <h2 class="event-item__title">@ev.Title</h2>
+                                <p class="event-item__location">@ev.Location</p>
+                            </div>
+                        </li>
+                    }
+                </ul>
+            </div>
+        }
+    </div>
+}

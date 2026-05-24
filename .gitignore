@@ -12,6 +12,9 @@
 # Publish output
 **/publish/
 
+# Documentation Sync
+.docs-sync-meta
+
 # User-specific files
 *.suo
 *.ntvs*

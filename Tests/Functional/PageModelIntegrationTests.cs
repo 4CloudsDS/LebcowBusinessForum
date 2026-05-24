@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
+using System.Text.RegularExpressions;
 using Xunit;
 
 namespace LebcowBusinessForum.Tests.Functional;
@@ -71,6 +72,47 @@ public class PageModelIntegrationTests : IClassFixture<LebcowWebFactory>
         Assert.Contains("Smoke Test Event", body, StringComparison.OrdinalIgnoreCase);
     }
 
+    [Fact]
+    [Trait("Category", "Functional")]
+    public async Task EventsDetailPage_SeededEventRoute_Returns_200()
+    {
+        var listResponse = await _client.GetAsync("/Events");
+        listResponse.EnsureSuccessStatusCode();
+        var body = await listResponse.Content.ReadAsStringAsync();
+
+        var match = Regex.Match(body, "href=\"/Events/([0-9a-fA-F-]{36})\"");
+        Assert.True(match.Success, "Expected at least one event detail link on /Events page.");
+
+        var eventId = match.Groups[1].Value;
+        var detailResponse = await _client.GetAsync($"/Events/{eventId}");
+
+        Assert.Equal(HttpStatusCode.OK, detailResponse.StatusCode);
+    }
+
+    // ── Footer pages ─────────────────────────────────────────────────────
+
+    [Theory]
+    [Trait("Category", "Functional")]
+    [InlineData("/Contact")]
+    [InlineData("/Privacy")]
+    [InlineData("/Terms")]
+    [InlineData("/About")]
+    public async Task FooterPages_Return_200(string url)
+    {
+        var response = await _client.GetAsync(url);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    [Fact]
+    [Trait("Category", "Functional")]
+    public async Task AboutPage_ContainsExpectedContent()
+    {
+        var response = await _client.GetAsync("/About");
+        response.EnsureSuccessStatusCode();
+        var body = await response.Content.ReadAsStringAsync();
+        Assert.Contains("Lebcow", body, StringComparison.OrdinalIgnoreCase);
+    }
+
     // ── Forum page ────────────────────────────────────────────────────────
 
     [Fact]
@@ -90,6 +132,11 @@ public class PageModelIntegrationTests : IClassFixture<LebcowWebFactory>
     [Trait("Category", "Functional")]
     [InlineData("/BusinessOwner/Dashboard")]
     [InlineData("/Admin")]
+    [InlineData("/Admin/Listings")]
+    [InlineData("/Admin/Categories")]
+    [InlineData("/Admin/Reviews")]
+    [InlineData("/Admin/Reports")]
+    [InlineData("/Account/Dashboard")]
     public async Task AuthGatedRoute_UnauthenticatedUser_Redirects(string url)
     {
         var response = await _client.GetAsync(url);
@@ -177,3 +224,4 @@ public class PageModelIntegrationTests : IClassFixture<LebcowWebFactory>
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 }
+

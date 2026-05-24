@@ -65,17 +65,32 @@ public class UpgradeListingModel : PageModel
             return Page();
         }
 
-        var listing = new Listing
-        {
-            ListingId = Guid.NewGuid(),
-            BusinessId = businessId,
-            Tier = Tier,
-            StartDate = DateTime.UtcNow,
-            EndDate = DateTime.UtcNow.AddDays(30),
-            PaymentStatus = "pending"   // Updated to 'paid' after payment webhook
-        };
+        var existing = await _db.Listings
+            .Where(l => l.BusinessId == businessId)
+            .OrderByDescending(l => l.StartDate)
+            .FirstOrDefaultAsync();
 
-        _db.Listings.Add(listing);
+        if (existing is not null)
+        {
+            existing.Tier = Tier;
+            existing.StartDate = DateTime.UtcNow;
+            existing.EndDate = DateTime.UtcNow.AddDays(30);
+            existing.PaymentStatus = "pending";
+        }
+        else
+        {
+            var listing = new Listing
+            {
+                ListingId = Guid.NewGuid(),
+                BusinessId = businessId,
+                Tier = Tier,
+                StartDate = DateTime.UtcNow,
+                EndDate = DateTime.UtcNow.AddDays(30),
+                PaymentStatus = "pending"
+            };
+            _db.Listings.Add(listing);
+        }
+
         await _db.SaveChangesAsync();
         await _audit.LogAsync(userId, $"Initiated listing upgrade to '{Tier}' for business id={businessId}");
 

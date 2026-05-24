@@ -18,9 +18,17 @@ public class BusinessService : IBusinessService
     public async Task<IReadOnlyList<Business>> GetByOwnerAsync(Guid ownerId)
         => await _db.Businesses
             .Include(b => b.Category)
+            .Include(b => b.Listings)
             .Where(b => b.OwnerId == ownerId)
             .OrderBy(b => b.Name)
             .ToListAsync();
+
+    public async Task UpdateAsync(Business business)
+    {
+        _db.Businesses.Update(business);
+        await _db.SaveChangesAsync();
+        await _audit.LogAsync(business.OwnerId ?? Guid.Empty, $"Updated business '{business.Name}' (id={business.BusinessId})");
+    }
 
     public async Task<Business?> GetByIdAsync(Guid businessId)
         => await _db.Businesses
