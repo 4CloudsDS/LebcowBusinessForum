@@ -110,6 +110,9 @@ resource appService 'Microsoft.Web/sites@2023-01-01' = {
   name: appName
   location: location
   kind: 'app,linux'
+  identity: {
+    type: 'SystemAssigned'
+  }
   properties: {
     serverFarmId: appServicePlan.id
     httpsOnly: true
@@ -197,6 +200,18 @@ resource kvSecretDbConn 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
   name: 'DefaultConnection'
   properties: {
     value: 'Host=${pgServer.properties.fullyQualifiedDomainName};Port=5432;Database=${pgDbName};Username=${pgAdminLogin};Password=${pgAdminPassword};Ssl Mode=Require;Trust Server Certificate=true;'
+  }
+}
+
+// ── Key Vault RBAC: grant App Service identity read access to secrets ──────
+// Role: Key Vault Secrets User (4633458b-17de-408a-b874-0445c86b69e0)
+resource appServiceKvSecretsUser 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(keyVault.id, appService.id, '4633458b-17de-408a-b874-0445c86b69e0')
+  scope: keyVault
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '4633458b-17de-408a-b874-0445c86b69e0')
+    principalId: appService.identity.principalId
+    principalType: 'ServicePrincipal'
   }
 }
 

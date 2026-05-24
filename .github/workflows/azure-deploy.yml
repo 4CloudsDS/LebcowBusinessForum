@@ -227,10 +227,13 @@ jobs:
       - name: Get database connection string
         id: get_conn
         run: |
-          CONN=$(az keyvault secret show \
-            --vault-name "${{ env.KV_NAME }}" \
-            --name "DefaultConnection" \
-            --query "value" -o tsv 2>/dev/null || echo "")
+          # SP has Contributor — can read resource properties but not KV secrets
+          # Build connection string from PG server FQDN (no KV access needed)
+          FQDN=$(az postgres flexible-server show \
+            --name "${{ env.PG_SERVER_NAME }}" \
+            --resource-group "${{ env.RESOURCE_GROUP }}" \
+            --query "fullyQualifiedDomainName" -o tsv)
+          CONN="Host=${FQDN};Port=5432;Database=lebcowdb;Username=pgadmin;Password=${{ secrets.PG_ADMIN_PASSWORD }};Ssl Mode=Require;Trust Server Certificate=true;"
           echo "::add-mask::$CONN"
           echo "connection_string=$CONN" >> $GITHUB_OUTPUT
 
@@ -272,6 +275,31 @@ jobs:
         with:
           name: webapp-publish
           path: ./publish
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Ensure App Service identity has Key Vault Secrets User role
+        run: |
+          # Idempotent — safe to run on every deploy even if infra was not re-provisioned
+          PRINCIPAL_ID=$(az webapp identity show \
+            --name "${{ env.WEBAPP_NAME }}" \
+            --resource-group "${{ env.RESOURCE_GROUP }}" \
+            --query "principalId" -o tsv)
+
+          KV_ID=$(az keyvault show \
+            --name "${{ env.KV_NAME }}" \
+            --resource-group "${{ env.RESOURCE_GROUP }}" \
+            --query "id" -o tsv)
+
+          az role assignment create \
+            --role "Key Vault Secrets User" \
+            --assignee-object-id "$PRINCIPAL_ID" \
+            --assignee-principal-type ServicePrincipal \
+            --scope "$KV_ID" 2>/dev/null \
+            || echo "Role assignment already exists — skipping."
 
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
