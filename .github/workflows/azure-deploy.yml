@@ -234,8 +234,10 @@ jobs:
           echo "::add-mask::$CONN"
           echo "connection_string=$CONN" >> $GITHUB_OUTPUT
 
-      - name: Restore dotnet-ef tool
-        run: dotnet tool restore || dotnet tool install --global dotnet-ef
+      - name: Install dotnet-ef tool
+        run: |
+          dotnet tool install --global dotnet-ef
+          echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
 
       - name: Apply pending migrations
         env:
@@ -244,13 +246,12 @@ jobs:
           cd WebApp
           PENDING=$(dotnet ef migrations list \
             --project LebcowBusinessForum.Web/LebcowBusinessForum.Web.csproj \
-            --no-build 2>/dev/null | grep -v "^Build" | grep -v "\[applied\]" | wc -l || echo "0")
+            2>/dev/null | grep -v "^Build" | grep -v "\[applied\]" | wc -l || echo "0")
 
           if [ "$PENDING" -gt "0" ]; then
             echo "Applying $PENDING pending migration(s)..."
             dotnet ef database update \
-              --project LebcowBusinessForum.Web/LebcowBusinessForum.Web.csproj \
-              --no-build
+              --project LebcowBusinessForum.Web/LebcowBusinessForum.Web.csproj
           else
             echo "No pending migrations — skipping."
           fi
