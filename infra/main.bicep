@@ -4,20 +4,26 @@
 // Profile:        web_plus_data
 // Project slug:   lebcowbusinessforum
 // Region:         southafricanorth
-// Resource group: rg-webapps-0001 (existing — shared webapp RG)
+// Resource group: rg-lebcowbusinessforum-prod (dedicated, created by CI/CD workflow)
 //
-// Existing resources (referenced, not recreated):
-//   - App Service Plan : ASP-rgwebapps0001-86a8  (Free)
-//   - Web App          : MarumaneMogoswane
-//   - App Insights     : MarumaneMogoswane
+// All resources are provisioned new in the dedicated resource group:
+//   - Log Analytics Workspace       : log-lebcowbusinessforum-prod
+//   - Application Insights          : appi-lebcowbusinessforum-prod
+//   - App Service Plan (Linux B1)   : asp-lebcowbusinessforum-prod
+//   - App Service (Linux .NET 8)    : app-lebcowbusinessforum-web
+//   - PostgreSQL Flexible Server    : pg-lebcowbusinessforum-prod
+//   - Key Vault (Standard)          : kv-lebcow-prod *
 //
-// New resources (provisioned when absent):
-//   - PostgreSQL Flexible Server : db-lebcowbusinessforum-prod
-//   - Key Vault                  : kv-lebcow-prod
+// * Azure Key Vault names are limited to 24 characters.
+//   'kv-lebcowbusinessforum-prod' (27 chars) exceeds this limit.
+//   Using 'kv-lebcow-prod' (14 chars) as an abbreviated name.
+//
+// PREREQUISITE: Resource group rg-lebcowbusinessforum-prod must exist.
+//   The CI/CD workflow creates it automatically via 'az group create'.
 //
 // NOTE: AZURE_WEBAPP_PUBLISH_PROFILE must be added to GitHub
-//       repository secrets manually before the deployment job runs.
-//       Obtain from: Azure Portal > App Service > MarumaneMogoswane > Get publish profile
+//       repository secrets before the deploy_app job runs.
+//       Obtain from: Azure Portal > App Service > app-lebcowbusinessforum-web > Get publish profile
 // ============================================================
 
 targetScope = 'resourceGroup'
@@ -40,25 +46,81 @@ param pgSkuName string = 'Standard_B1ms'
 @description('PostgreSQL storage size in MB')
 param pgStorageSizeMb int = 32768
 
+@description('App Service Plan SKU — B1 or higher recommended (Free tier does not support AlwaysOn)')
+@allowed(['B1', 'B2', 'B3', 'S1', 'S2', 'P0V3', 'P1V3', 'P2V3'])
+param appServiceSku string = 'B1'
+
 @description('Azure region for all new resources')
 param location string = resourceGroup().location
 
 // ── Variables ────────────────────────────────────────────────
-var projectSlug     = 'lebcowbusinessforum'
-var environment     = 'prod'
-var pgServerName    = 'db-${projectSlug}-${environment}'
-var keyVaultName    = 'kv-lebcow-${environment}'
-var pgDbName        = 'lebcowdb'
-var existingWebApp  = 'MarumaneMogoswane'
-var existingAiName  = 'MarumaneMogoswane'
+var projectSlug      = 'lebcowbusinessforum'
+var environment      = 'prod'
+var appName          = 'app-${projectSlug}-web'
+var aspName          = 'asp-${projectSlug}-${environment}'
+var appInsightsName  = 'appi-${projectSlug}-${environment}'
+var logWorkspaceName = 'log-${projectSlug}-${environment}'
+var pgServerName     = 'pg-${projectSlug}-${environment}'
+// Azure Key Vault names are capped at 24 characters; 'kv-lebcowbusinessforum-prod' is 27 chars
+var keyVaultName     = 'kv-lebcow-${environment}'
+var pgDbName         = 'lebcowdb'
 
-// ── Existing resources (reference only) ─────────────────────
-resource existingWebAppRef 'Microsoft.Web/sites@2023-01-01' existing = {
-  name: existingWebApp
+// ── Log Analytics Workspace ──────────────────────────────
+resource logWorkspace 'Microsoft.OperationalInsights/workspaces@2022-10-01' = {
+  name: logWorkspaceName
+  location: location
+  properties: {
+    sku: {
+      name: 'PerGB2018'
+    }
+    retentionInDays: 30
+    publicNetworkAccessForIngestion: 'Enabled'
+    publicNetworkAccessForQuery: 'Enabled'
+  }
 }
 
-resource existingAppInsights 'Microsoft.Insights/components@2020-02-02' existing = {
-  name: existingAiName
+// ── Application Insights (workspace-based) ───────────────────
+resource appInsights 'Microsoft.Insights/components@2020-02-02' = {
+  name: appInsightsName
+  location: location
+  kind: 'web'
+  properties: {
+    Application_Type: 'web'
+    WorkspaceResourceId: logWorkspace.id
+    publicNetworkAccessForIngestion: 'Enabled'
+    publicNetworkAccessForQuery: 'Enabled'
+  }
+}
+
+// ── App Service Plan (Linux) ───────────────────────────────
+resource appServicePlan 'Microsoft.Web/serverfarms@2023-01-01' = {
+  name: aspName
+  location: location
+  kind: 'linux'
+  sku: {
+    name: appServiceSku
+  }
+  properties: {
+    reserved: true   // required for Linux hosting
+  }
+}
+
+// ── App Service (Linux .NET 8) ─────────────────────────────
+resource appService 'Microsoft.Web/sites@2023-01-01' = {
+  name: appName
+  location: location
+  kind: 'app,linux'
+  properties: {
+    serverFarmId: appServicePlan.id
+    httpsOnly: true
+    siteConfig: {
+      linuxFxVersion: 'DOTNETCORE|8.0'
+      alwaysOn: true
+      ftpsState: 'Disabled'
+      minTlsVersion: '1.2'
+      http20Enabled: true
+    }
+  }
 }
 
 // ── Key Vault ────────────────────────────────────────────────
@@ -119,7 +181,7 @@ resource pgDatabase 'Microsoft.DBforPostgreSQL/flexibleServers/databases@2023-06
   }
 }
 
-// Allow Azure services to connect (required for App Service outbound)
+// Allow Azure services to connect (required for App Service -> PostgreSQL outbound)
 resource pgFirewallAzureServices 'Microsoft.DBforPostgreSQL/flexibleServers/firewallRules@2023-06-01-preview' = {
   parent: pgServer
   name: 'AllowAzureServices'
@@ -139,23 +201,22 @@ resource kvSecretDbConn 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
 }
 
 // ── App Service configuration ────────────────────────────────
-// App settings are merged with existing; only the keys listed here are managed by IaC
 resource webAppSettings 'Microsoft.Web/sites/config@2023-01-01' = {
-  parent: existingWebAppRef
+  parent: appService
   name: 'appsettings'
   properties: {
     ASPNETCORE_ENVIRONMENT: 'Production'
-    APPLICATIONINSIGHTS_CONNECTION_STRING: existingAppInsights.properties.ConnectionString
+    APPLICATIONINSIGHTS_CONNECTION_STRING: appInsights.properties.ConnectionString
     ApplicationInsightsAgent_EXTENSION_VERSION: '~3'
-    // Database connection string is injected via Key Vault reference at deploy time;
-    // the actual @Microsoft.KeyVault(...) reference is set by the deployment workflow
-    // using az webapp config connection-string set after Key Vault is provisioned.
+    // DefaultConnection is injected as a Key Vault reference via
+    // az webapp config connection-string set after Key Vault is provisioned
   }
 }
 
 // ── Outputs ──────────────────────────────────────────────────
-output webAppName string       = existingWebApp
-output pgServerFqdn string     = pgServer.properties.fullyQualifiedDomainName
-output keyVaultName string     = keyVault.name
-output pgSecretUri string      = kvSecretDbConn.properties.secretUri
-output appInsightsConnString string = existingAppInsights.properties.ConnectionString
+output webAppName string            = appService.name
+output webAppHostname string        = appService.properties.defaultHostName
+output pgServerFqdn string          = pgServer.properties.fullyQualifiedDomainName
+output keyVaultName string          = keyVault.name
+output pgSecretUri string           = kvSecretDbConn.properties.secretUri
+output appInsightsConnString string = appInsights.properties.ConnectionString
