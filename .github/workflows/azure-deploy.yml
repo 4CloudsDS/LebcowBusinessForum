@@ -164,6 +164,14 @@ jobs:
             --name "${{ env.RESOURCE_GROUP }}" \
             --location "${{ env.AZURE_LOCATION }}"
 
+      - name: Register required resource providers
+        run: |
+          az provider register --namespace Microsoft.DBforPostgreSQL --wait
+          az provider register --namespace Microsoft.KeyVault --wait
+          az provider register --namespace Microsoft.Web --wait
+          az provider register --namespace Microsoft.Insights --wait
+          az provider register --namespace Microsoft.OperationalInsights --wait
+
       - name: What-if (dry run)
         run: |
           az deployment group what-if \
@@ -181,18 +189,19 @@ jobs:
 
       - name: Set App Service connection string from Key Vault
         run: |
-          # Retrieve the secret URI for DefaultConnection from Key Vault
-          SECRET_URI=$(az keyvault secret show \
-            --vault-name "${{ env.KV_NAME }}" \
-            --name "DefaultConnection" \
-            --query "id" -o tsv)
+          # Read pgSecretUri from the Bicep deployment output — no Key Vault read access required
+          SECRET_URI=$(az deployment group show \
+            --resource-group "${{ env.RESOURCE_GROUP }}" \
+            --name "lbf-deploy-${{ github.run_number }}" \
+            --query "properties.outputs.pgSecretUri.value" -o tsv)
 
-          # Set App Service connection string as Key Vault reference
-          az webapp config connection-string set \
+          # Use appsettings (double-underscore key) so .NET's config system reads it
+          # as ConnectionStrings:DefaultConnection.  connection-string-type=PostgreSQL
+          # maps to POSTGRESQLCONNSTR_ which .NET does NOT map automatically.
+          az webapp config appsettings set \
             --resource-group "${{ env.RESOURCE_GROUP }}" \
             --name "${{ env.WEBAPP_NAME }}" \
-            --settings DefaultConnection="@Microsoft.KeyVault(SecretUri=${SECRET_URI})" \
-            --connection-string-type PostgreSQL
+            --settings "ConnectionStrings__DefaultConnection=@Microsoft.KeyVault(SecretUri=${SECRET_URI})"
 
   # ── 4. DATABASE MIGRATION (if pending) ────────────────────
   migrate_db:
@@ -216,18 +225,37 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
+      - name: Allow GitHub Actions runner IP in PG firewall
+        run: |
+          RUNNER_IP=$(curl -s https://api.ipify.org)
+          echo "Runner IP: $RUNNER_IP"
+          az postgres flexible-server firewall-rule create \
+            --resource-group "${{ env.RESOURCE_GROUP }}" \
+            --name "${{ env.PG_SERVER_NAME }}" \
+            --rule-name "github-actions-runner" \
+            --start-ip-address "$RUNNER_IP" \
+            --end-ip-address "$RUNNER_IP"
+
       - name: Get database connection string
         id: get_conn
         run: |
-          CONN=$(az keyvault secret show \
-            --vault-name "${{ env.KV_NAME }}" \
-            --name "DefaultConnection" \
-            --query "value" -o tsv 2>/dev/null || echo "")
+          # SP has Contributor — can read resource properties but not KV secrets
+          # Build connection string from PG server FQDN (no KV access needed)
+          FQDN=$(az postgres flexible-server show \
+            --name "${{ env.PG_SERVER_NAME }}" \
+            --resource-group "${{ env.RESOURCE_GROUP }}" \
+            --query "fullyQualifiedDomainName" -o tsv)
+          CONN="Host=${FQDN};Port=5432;Database=lebcowdb;Username=pgadmin;Password=${{ secrets.PG_ADMIN_PASSWORD }};Ssl Mode=Require;Trust Server Certificate=true;"
           echo "::add-mask::$CONN"
           echo "connection_string=$CONN" >> $GITHUB_OUTPUT
 
-      - name: Restore dotnet-ef tool
-        run: dotnet tool restore || dotnet tool install --global dotnet-ef
+      - name: Restore web project dependencies
+        run: dotnet restore "${{ env.PROJECT_PATH }}"
+
+      - name: Install dotnet-ef tool
+        run: |
+          dotnet tool install --global dotnet-ef
+          echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
 
       - name: Apply pending migrations
         env:
@@ -236,16 +264,24 @@ jobs:
           cd WebApp
           PENDING=$(dotnet ef migrations list \
             --project LebcowBusinessForum.Web/LebcowBusinessForum.Web.csproj \
-            --no-build 2>/dev/null | grep -v "^Build" | grep -v "\[applied\]" | wc -l || echo "0")
+            2>/dev/null | grep -v "^Build" | grep -v "\[applied\]" | wc -l || echo "0")
 
           if [ "$PENDING" -gt "0" ]; then
             echo "Applying $PENDING pending migration(s)..."
             dotnet ef database update \
-              --project LebcowBusinessForum.Web/LebcowBusinessForum.Web.csproj \
-              --no-build
+              --project LebcowBusinessForum.Web/LebcowBusinessForum.Web.csproj
           else
             echo "No pending migrations — skipping."
           fi
+
+      - name: Remove GitHub Actions runner IP from PG firewall
+        if: always()
+        run: |
+          az postgres flexible-server firewall-rule delete \
+            --resource-group "${{ env.RESOURCE_GROUP }}" \
+            --name "${{ env.PG_SERVER_NAME }}" \
+            --rule-name "github-actions-runner" \
+            --yes 2>/dev/null || echo "Firewall rule not found — skipping."
 
   # ── 5. DEPLOY APPLICATION ─────────────────────────────────
   deploy_app:
@@ -260,6 +296,43 @@ jobs:
         with:
           name: webapp-publish
           path: ./publish
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Ensure App Service identity has Key Vault Secrets User role
+        run: |
+          # Idempotent — safe to run on every deploy even if infra was not re-provisioned
+          # identity assign is a no-op if already enabled
+          PRINCIPAL_ID=$(az webapp identity assign \
+            --name "${{ env.WEBAPP_NAME }}" \
+            --resource-group "${{ env.RESOURCE_GROUP }}" \
+            --query "principalId" -o tsv)
+
+          KV_ID=$(az keyvault show \
+            --name "${{ env.KV_NAME }}" \
+            --resource-group "${{ env.RESOURCE_GROUP }}" \
+            --query "id" -o tsv)
+
+          az role assignment create \
+            --role "Key Vault Secrets User" \
+            --assignee-object-id "$PRINCIPAL_ID" \
+            --assignee-principal-type ServicePrincipal \
+            --scope "$KV_ID" 2>/dev/null \
+            || echo "Role assignment already exists — skipping."
+
+      - name: Set connection string to Key Vault reference (idempotent)
+        run: |
+          # Runs on every deploy — ensures the KV reference is always correct
+          # even when deploy_infra was skipped (infra already existed).
+          # appsettings with double-underscore is what .NET reads as ConnectionStrings:DefaultConnection.
+          SECRET_URI="https://${{ env.KV_NAME }}.vault.azure.net/secrets/DefaultConnection"
+          az webapp config appsettings set \
+            --resource-group "${{ env.RESOURCE_GROUP }}" \
+            --name "${{ env.WEBAPP_NAME }}" \
+            --settings "ConnectionStrings__DefaultConnection=@Microsoft.KeyVault(SecretUri=${SECRET_URI})"
 
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
