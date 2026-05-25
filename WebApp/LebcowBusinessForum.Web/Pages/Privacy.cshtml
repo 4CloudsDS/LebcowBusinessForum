@@ -1,18 +1,73 @@
 @page
 @{
     ViewData["Title"] = "Privacy Policy";
+    ViewData["Description"] = "How LebcowBusiness Forum collects and protects your personal information.";
+    var lastUpdated = "1 January 2025";
 }
 
-<div class="container legal-page">
-    <h1 class="page-title">Privacy Policy</h1>
-    <p>LebcowBusiness Forum values your privacy and protects personal information in line with applicable South African law.</p>
+<div class="content-page">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+        <ol>
+            <li><a href="/">Home</a></li>
+            <li aria-current="page">Privacy Policy</li>
+        </ol>
+    </nav>
 
-    <h2>What We Collect</h2>
-    <p>We collect account, listing, and basic usage information required to operate the platform.</p>
+    <div class="content-page__header">
+        <p class="content-page__eyebrow">Last updated @lastUpdated</p>
+        <h1 class="content-page__title">Privacy Policy</h1>
+        <p class="content-page__lead">LebcowBusiness Forum values your privacy and is committed to protecting your personal information in line with applicable South African law (POPIA).</p>
+    </div>
 
-    <h2>How We Use Information</h2>
-    <p>Information is used to provide services, improve the platform, and communicate relevant updates.</p>
+    <div class="content-layout">
+        <main>
+            <section id="what-we-collect" class="content-section" aria-labelledby="privacy-collect">
+                <h2 id="privacy-collect" class="content-section__title">1. What We Collect</h2>
+                <p>We collect information you provide when you create an account, submit a business listing, post forum content, or contact our support team. This includes your name, email address, and any optional details you choose to share.</p>
+                <p>We also automatically collect standard usage data such as pages visited and browser type, used to improve platform performance and security.</p>
+            </section>
 
-    <h2>Contact</h2>
-    <p>For privacy requests, please use the contact details on our Contact page.</p>
+            <section id="how-we-use" class="content-section" aria-labelledby="privacy-use">
+                <h2 id="privacy-use" class="content-section__title">2. How We Use Your Information</h2>
+                <p>Your information is used to provide and operate the platform, authenticate your account, send service-related communications, and improve user experience.</p>
+                <p>We do not sell your personal information to third parties. We may share limited data with service providers (such as hosting) strictly for the purpose of delivering our services.</p>
+            </section>
+
+            <section id="data-retention" class="content-section" aria-labelledby="privacy-retention">
+                <h2 id="privacy-retention" class="content-section__title">3. Data Retention</h2>
+                <p>We retain your account data for as long as your account is active. You may request deletion of your account and associated personal data by contacting us. Some records may be retained where required by law.</p>
+            </section>
+
+            <section id="your-rights" class="content-section" aria-labelledby="privacy-rights">
+                <h2 id="privacy-rights" class="content-section__title">4. Your Rights</h2>
+                <p>Under POPIA, you have the right to access, correct, or request erasure of your personal information held by us. To exercise these rights, please contact our support team.</p>
+            </section>
+
+            <section id="privacy-contact" class="content-section" aria-labelledby="privacy-contact-heading">
+                <h2 id="privacy-contact-heading" class="content-section__title">5. Contact &amp; Complaints</h2>
+                <p>For privacy requests or concerns, please email <a href="mailto:support@lebcowbusinessforum.co.za">support@lebcowbusinessforum.co.za</a>. We aim to respond within 5 business days.</p>
+            </section>
+        </main>
+
+        <aside>
+            <div class="content-sidebar-card">
+                <h2 class="content-sidebar-card__title">Sections</h2>
+                <ul class="legal-toc" role="list">
+                    <li><a href="#what-we-collect">1. What We Collect</a></li>
+                    <li><a href="#how-we-use">2. How We Use Your Information</a></li>
+                    <li><a href="#data-retention">3. Data Retention</a></li>
+                    <li><a href="#your-rights">4. Your Rights</a></li>
+                    <li><a href="#privacy-contact">5. Contact &amp; Complaints</a></li>
+                </ul>
+            </div>
+
+            <div class="content-sidebar-card">
+                <h2 class="content-sidebar-card__title">Related</h2>
+                <ul class="legal-toc" role="list">
+                    <li><a href="/Terms">Terms of Use</a></li>
+                    <li><a href="/Contact">Contact Us</a></li>
+                </ul>
+            </div>
+        </aside>
+    </div>
 </div>

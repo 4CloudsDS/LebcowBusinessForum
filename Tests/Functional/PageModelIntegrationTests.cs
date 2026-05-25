@@ -111,6 +111,44 @@ public class PageModelIntegrationTests : IClassFixture<LebcowWebFactory>
         response.EnsureSuccessStatusCode();
         var body = await response.Content.ReadAsStringAsync();
         Assert.Contains("Lebcow", body, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("Who We Are", body, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("Browse Businesses", body, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    [Trait("Category", "Functional")]
+    public async Task ContactPage_ContainsExpectedContent()
+    {
+        var response = await _client.GetAsync("/Contact");
+        response.EnsureSuccessStatusCode();
+        var body = await response.Content.ReadAsStringAsync();
+        Assert.Contains("support@lebcowbusinessforum.co.za", body, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("+27 51 000 0000", body, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("partnerships@lebcowbusinessforum.co.za", body, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    [Trait("Category", "Functional")]
+    public async Task PrivacyPage_ContainsExpectedContent()
+    {
+        var response = await _client.GetAsync("/Privacy");
+        response.EnsureSuccessStatusCode();
+        var body = await response.Content.ReadAsStringAsync();
+        Assert.Contains("Privacy Policy", body, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("What We Collect", body, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("How We Use", body, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    [Trait("Category", "Functional")]
+    public async Task TermsPage_ContainsExpectedContent()
+    {
+        var response = await _client.GetAsync("/Terms");
+        response.EnsureSuccessStatusCode();
+        var body = await response.Content.ReadAsStringAsync();
+        Assert.Contains("Terms of Use", body, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("Acceptable Use", body, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("Listings and Content", body, StringComparison.OrdinalIgnoreCase);
     }
 
     // ── Forum page ────────────────────────────────────────────────────────
@@ -137,6 +175,7 @@ public class PageModelIntegrationTests : IClassFixture<LebcowWebFactory>
     [InlineData("/Admin/Reviews")]
     [InlineData("/Admin/Reports")]
     [InlineData("/Account/Dashboard")]
+    [InlineData("/Account/Profile")]
     public async Task AuthGatedRoute_UnauthenticatedUser_Redirects(string url)
     {
         var response = await _client.GetAsync(url);

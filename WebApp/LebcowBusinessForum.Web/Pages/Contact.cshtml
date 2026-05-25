@@ -1,17 +1,97 @@
 @page
 @{
     ViewData["Title"] = "Contact Us";
+    ViewData["Description"] = "Get in touch with the LebcowBusiness Forum support team.";
 }
 
-<div class="container contact-page">
-    <h1 class="page-title">Contact Us</h1>
-    <p>Need help with your listing or account? Reach out to our support team.</p>
+<div class="content-page">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+        <ol>
+            <li><a href="/">Home</a></li>
+            <li aria-current="page">Contact</li>
+        </ol>
+    </nav>
 
-    <ul>
-        <li>Email: support@lebcowbusinessforum.co.za</li>
-        <li>Phone: +27 51 000 0000</li>
-        <li>Hours: Monday to Friday, 08:00 to 17:00 SAST</li>
-    </ul>
+    <div class="content-page__header">
+        <p class="content-page__eyebrow">We'd love to hear from you</p>
+        <h1 class="content-page__title">Contact Us</h1>
+        <p class="content-page__lead">Need help with your listing, account, or have a general question? Our support team is ready to assist.</p>
+    </div>
 
-    <p>For partnership or media enquiries, email partnerships@lebcowbusinessforum.co.za.</p>
+    <div class="content-layout">
+        <main>
+            <section class="content-section" aria-labelledby="contact-details-heading">
+                <h2 id="contact-details-heading" class="content-section__title">Get in Touch</h2>
+                <ul class="contact-detail-list" role="list">
+                    <li class="contact-detail-item">
+                        <div class="contact-detail-item__icon" aria-hidden="true">✉️</div>
+                        <dl class="contact-detail-item__body">
+                            <dt>Support Email</dt>
+                            <dd><a href="mailto:support@lebcowbusinessforum.co.za">support@lebcowbusinessforum.co.za</a></dd>
+                        </dl>
+                    </li>
+                    <li class="contact-detail-item">
+                        <div class="contact-detail-item__icon" aria-hidden="true">📞</div>
+                        <dl class="contact-detail-item__body">
+                            <dt>Phone</dt>
+                            <dd><a href="tel:+27510000000">+27 51 000 0000</a></dd>
+                        </dl>
+                    </li>
+                    <li class="contact-detail-item">
+                        <div class="contact-detail-item__icon" aria-hidden="true">🕐</div>
+                        <dl class="contact-detail-item__body">
+                            <dt>Support Hours</dt>
+                            <dd>Monday – Friday, 08:00 to 17:00 SAST</dd>
+                        </dl>
+                    </li>
+                    <li class="contact-detail-item">
+                        <div class="contact-detail-item__icon" aria-hidden="true">🤝</div>
+                        <dl class="contact-detail-item__body">
+                            <dt>Partnerships &amp; Media</dt>
+                            <dd><a href="mailto:partnerships@lebcowbusinessforum.co.za">partnerships@lebcowbusinessforum.co.za</a></dd>
+                        </dl>
+                    </li>
+                </ul>
+            </section>
+
+            <section class="content-section" aria-labelledby="contact-faq">
+                <h2 id="contact-faq" class="content-section__title">Common Questions</h2>
+                <ul class="content-feature-list" role="list">
+                    <li>
+                        <span class="content-feature-list__icon" aria-hidden="true">❓</span>
+                        <div><strong>How do I claim my business listing?</strong> Register an account and select "List Your Business" from your dashboard.</div>
+                    </li>
+                    <li>
+                        <span class="content-feature-list__icon" aria-hidden="true">❓</span>
+                        <div><strong>How long does support take to respond?</strong> We aim to respond within 1 business day.</div>
+                    </li>
+                    <li>
+                        <span class="content-feature-list__icon" aria-hidden="true">❓</span>
+                        <div><strong>Can I report a listing?</strong> Use the "Report" option on any listing page, or email our support team directly.</div>
+                    </li>
+                </ul>
+            </section>
+        </main>
+
+        <aside>
+            <div class="content-sidebar-card">
+                <h2 class="content-sidebar-card__title">Quick Links</h2>
+                <ul class="legal-toc" role="list">
+                    <li><a href="/Account/Register">Create an Account</a></li>
+                    <li><a href="/Account/Login">Sign In</a></li>
+                    <li><a href="/Forum">Community Forum</a></li>
+                    <li><a href="/Privacy">Privacy Policy</a></li>
+                    <li><a href="/Terms">Terms of Use</a></li>
+                </ul>
+            </div>
+
+            <div class="content-sidebar-card" style="background:var(--color-surface);border-color:var(--color-border);">
+                <h2 class="content-sidebar-card__title">Business Owner?</h2>
+                <p style="color:var(--color-text-muted);font-size:.9rem;margin-bottom:var(--space-md);line-height:1.6;">
+                    List your business today and connect with thousands of local customers.
+                </p>
+                <a href="/Account/Register" class="btn btn--primary" style="width:100%;text-align:center;">Get Started Free</a>
+            </div>
+        </aside>
+    </div>
 </div>

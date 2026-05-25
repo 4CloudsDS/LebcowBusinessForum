@@ -1,18 +1,75 @@
 @page
 @{
     ViewData["Title"] = "Terms of Use";
+    ViewData["Description"] = "The rules and conditions for using LebcowBusiness Forum.";
+    var lastUpdated = "1 January 2025";
 }
 
-<div class="container legal-page">
-    <h1 class="page-title">Terms of Use</h1>
-    <p>Welcome to LebcowBusiness Forum. By using this site, you agree to use it lawfully and respectfully.</p>
+<div class="content-page">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+        <ol>
+            <li><a href="/">Home</a></li>
+            <li aria-current="page">Terms of Use</li>
+        </ol>
+    </nav>
 
-    <h2>Listings and Content</h2>
-    <p>Business owners are responsible for the accuracy of submitted listing information.</p>
+    <div class="content-page__header">
+        <p class="content-page__eyebrow">Last updated @lastUpdated</p>
+        <h1 class="content-page__title">Terms of Use</h1>
+        <p class="content-page__lead">Welcome to LebcowBusiness Forum. By accessing or using this platform, you agree to be bound by the following terms and conditions.</p>
+    </div>
 
-    <h2>Acceptable Use</h2>
-    <p>You may not submit unlawful, fraudulent, abusive, or misleading content.</p>
+    <div class="content-layout">
+        <main>
+            <section id="use-of-platform" class="content-section" aria-labelledby="terms-use">
+                <h2 id="terms-use" class="content-section__title">1. Use of the Platform</h2>
+                <p>LebcowBusiness Forum provides a directory, forum, and community platform for South African businesses and consumers. By creating an account, you agree to use the platform for lawful purposes only.</p>
+                <p>You are responsible for maintaining the confidentiality of your login credentials and for all activity under your account.</p>
+            </section>
 
-    <h2>Changes</h2>
-    <p>These terms may be updated from time to time. Continued use of the site indicates acceptance of updates.</p>
+            <section id="listings-content" class="content-section" aria-labelledby="terms-listings">
+                <h2 id="terms-listings" class="content-section__title">2. Listings and Content</h2>
+                <p>Business owners are solely responsible for the accuracy, legality, and completeness of the information submitted in their listings. Listings must represent real, lawfully operating businesses.</p>
+                <p>By submitting content to the platform, you grant LebcowBusiness Forum a non-exclusive licence to display and distribute that content on the platform.</p>
+            </section>
+
+            <section id="acceptable-use" class="content-section" aria-labelledby="terms-acceptable">
+                <h2 id="terms-acceptable" class="content-section__title">3. Acceptable Use</h2>
+                <p>You may not post or submit content that is unlawful, fraudulent, defamatory, abusive, misleading, or in violation of any third-party rights. This includes spam, harassment, and impersonation.</p>
+                <p>Violations may result in content removal, account suspension, or reporting to relevant authorities.</p>
+            </section>
+
+            <section id="intellectual-property" class="content-section" aria-labelledby="terms-ip">
+                <h2 id="terms-ip" class="content-section__title">4. Intellectual Property</h2>
+                <p>All platform content, branding, and design created by LebcowBusiness Forum remains its property. You may not reproduce, distribute, or create derivative works without written permission.</p>
+            </section>
+
+            <section id="changes-terms" class="content-section" aria-labelledby="terms-changes">
+                <h2 id="terms-changes" class="content-section__title">5. Changes to These Terms</h2>
+                <p>These terms may be updated from time to time. We will notify registered users of significant changes via email. Continued use of the platform after changes are published constitutes acceptance of the updated terms.</p>
+                <p>For questions about these terms, contact <a href="mailto:support@lebcowbusinessforum.co.za">support@lebcowbusinessforum.co.za</a>.</p>
+            </section>
+        </main>
+
+        <aside>
+            <div class="content-sidebar-card">
+                <h2 class="content-sidebar-card__title">Sections</h2>
+                <ul class="legal-toc" role="list">
+                    <li><a href="#use-of-platform">1. Use of the Platform</a></li>
+                    <li><a href="#listings-content">2. Listings and Content</a></li>
+                    <li><a href="#acceptable-use">3. Acceptable Use</a></li>
+                    <li><a href="#intellectual-property">4. Intellectual Property</a></li>
+                    <li><a href="#changes-terms">5. Changes to These Terms</a></li>
+                </ul>
+            </div>
+
+            <div class="content-sidebar-card">
+                <h2 class="content-sidebar-card__title">Related</h2>
+                <ul class="legal-toc" role="list">
+                    <li><a href="/Privacy">Privacy Policy</a></li>
+                    <li><a href="/Contact">Contact Us</a></li>
+                </ul>
+            </div>
+        </aside>
+    </div>
 </div>

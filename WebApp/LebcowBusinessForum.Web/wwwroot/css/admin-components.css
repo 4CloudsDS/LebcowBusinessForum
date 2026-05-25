@@ -499,6 +499,126 @@
   padding-right: var(--space-lg);
 }
 
+/* ========================================================
+   Profile Page & Admin Users — User Management
+   ======================================================== */
+
+/* --- Profile detail list -------------------------------- */
+.profile-detail-list {
+  margin: 0;
+  padding: 0;
+}
+
+.profile-detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: var(--space-md) 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.profile-detail-item:last-child {
+  border-bottom: none;
+}
+
+.profile-detail-item dt {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--color-muted);
+}
+
+.profile-detail-item dd {
+  margin: 0;
+  font-size: 1rem;
+  color: var(--color-text);
+}
+
+.profile-card {
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+/* --- Admin Users — search & filter row ------------------ */
+.admin-filters-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-md);
+  margin-bottom: var(--space-lg);
+}
+
+.users-search-form {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  flex: 1;
+  min-width: 0;
+}
+
+.users-search-input {
+  flex: 1;
+  min-width: 180px;
+  padding: var(--space-sm) var(--space-md);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: 0.9rem;
+  font-family: inherit;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.users-search-input:focus {
+  outline: 3px solid var(--color-accent);
+  outline-offset: 1px;
+  border-color: var(--color-accent);
+}
+
+/* --- User name + email stacked cell --------------------- */
+.user-name {
+  display: block;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.user-email {
+  display: block;
+  font-size: 0.8rem;
+}
+
+/* --- Inactive row dimming ------------------------------- */
+.user-row--inactive {
+  opacity: 0.6;
+}
+
+/* --- Danger button variant ------------------------------ */
+.btn--danger {
+  background: var(--color-danger);
+  color: #fff;
+  border: 1px solid var(--color-danger);
+}
+
+.btn--danger:hover,
+.btn--danger:focus-visible {
+  background: #c0392b;
+  border-color: #c0392b;
+  color: #fff;
+}
+
+@media (max-width: 700px) {
+  .admin-filters-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .users-search-form {
+    flex-wrap: wrap;
+  }
+}
+
 .py-lg {
   padding-top: var(--space-lg);
   padding-bottom: var(--space-lg);
