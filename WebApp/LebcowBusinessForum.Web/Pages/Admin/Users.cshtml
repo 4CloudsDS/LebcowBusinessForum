@@ -1,0 +1,153 @@
+@page
+@model LebcowBusinessForum.Web.Pages.Admin.UsersModel
+@{
+    ViewData["Title"] = "Admin — Users";
+}
+
+<div class="container admin-page admin-shell py-4">
+    <header class="admin-header">
+        <div>
+            <h1 class="page-title">Manage Users</h1>
+            <p class="admin-subtitle">Browse registered members, manage roles, and moderate accounts.</p>
+        </div>
+        <div class="admin-header__actions">
+            <a href="/Admin" class="btn btn--outline btn--sm">Back to Admin</a>
+        </div>
+    </header>
+
+    @if (TempData["Message"] is string msg)
+    {
+        var alertClass = TempData["MessageType"] as string == "danger" ? "alert--danger" : "alert--success";
+        var icon = TempData["MessageType"] as string == "danger" ? "✕" : "✓";
+        <div class="alert @alertClass" role="alert" aria-live="polite">
+            <span class="alert__icon" aria-hidden="true">@icon</span>
+            @msg
+            <button type="button" class="alert__dismiss" aria-label="Dismiss message" onclick="this.parentElement.remove()">×</button>
+        </div>
+    }
+
+    <section class="admin-kpi-grid">
+        <article class="admin-kpi-card">
+            <span class="admin-kpi-card__label">Total Shown</span>
+            <strong class="admin-kpi-card__value">@Model.Users.Count</strong>
+        </article>
+        <article class="admin-kpi-card">
+            <span class="admin-kpi-card__label">Admins</span>
+            <strong class="admin-kpi-card__value">@Model.Users.Count(u => u.Roles.Contains("Admin"))</strong>
+        </article>
+        <article class="admin-kpi-card">
+            <span class="admin-kpi-card__label">Flagged / Inactive</span>
+            <strong class="admin-kpi-card__value">@Model.Users.Count(u => !u.IsActive)</strong>
+        </article>
+    </section>
+
+    <div class="admin-filters-row">
+        <form method="get" class="users-search-form" role="search">
+            <input type="search" name="search" value="@Model.Search" placeholder="Search name or email…" class="users-search-input" aria-label="Search users" />
+            <input type="hidden" name="roleFilter" value="@Model.RoleFilter" />
+            <button type="submit" class="btn btn--primary btn--sm">Search</button>
+            @if (!string.IsNullOrWhiteSpace(Model.Search))
+            {
+                <a href="/Admin/Users?roleFilter=@Model.RoleFilter" class="btn btn--outline btn--sm">Clear</a>
+            }
+        </form>
+
+        <div class="filter-group" role="group" aria-label="Filter by role">
+            <a href="/Admin/Users?roleFilter=all&search=@Model.Search"
+               class="btn btn--sm @(string.IsNullOrWhiteSpace(Model.RoleFilter) || Model.RoleFilter == "all" ? "btn--primary" : "btn--outline")">All</a>
+            <a href="/Admin/Users?roleFilter=Admin&search=@Model.Search"
+               class="btn btn--sm @(Model.RoleFilter == "Admin" ? "btn--primary" : "btn--outline")">Admins</a>
+            <a href="/Admin/Users?roleFilter=BusinessOwner&search=@Model.Search"
+               class="btn btn--sm @(Model.RoleFilter == "BusinessOwner" ? "btn--primary" : "btn--outline")">Business Owners</a>
+        </div>
+    </div>
+
+    <section class="admin-panel">
+        <div class="admin-panel__header">
+            <h2>User List</h2>
+            <p>@Model.Users.Count user(s) matching current filters.</p>
+        </div>
+
+        @if (Model.Users.Count == 0)
+        {
+            <div class="admin-empty-state">No users match the current filter.</div>
+        }
+        else
+        {
+            <div class="admin-table-wrap">
+                <table class="admin-data-table">
+                    <thead>
+                        <tr>
+                            <th>Name / Email</th>
+                            <th>Phone</th>
+                            <th>Role(s)</th>
+                            <th>Status</th>
+                            <th>Joined</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var user in Model.Users)
+                        {
+                            <tr class="@(!user.IsActive ? "user-row--inactive" : "")">
+                                <td data-label="Name / Email">
+                                    <strong class="user-name">@(string.IsNullOrWhiteSpace(user.FullName) ? "—" : user.FullName)</strong>
+                                    <span class="user-email text-muted">@user.Email</span>
+                                </td>
+                                <td data-label="Phone">@(user.PhoneNumber ?? "—")</td>
+                                <td data-label="Role(s)">
+                                    @if (user.Roles.Count == 0)
+                                    {
+                                        <span class="badge badge--free">Member</span>
+                                    }
+                                    else
+                                    {
+                                        @foreach (var role in user.Roles)
+                                        {
+                                            var roleClass = role == "Admin" ? "badge--featured" : role == "BusinessOwner" ? "badge--premium" : "badge--free";
+                                            <span class="badge @roleClass">@role</span>
+                                        }
+                                    }
+                                </td>
+                                <td data-label="Status">
+                                    @if (user.IsActive)
+                                    {
+                                        <span class="badge badge--approved">Active</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge badge--rejected">Flagged</span>
+                                    }
+                                </td>
+                                <td data-label="Joined">@user.CreatedAt.ToString("dd MMM yyyy")</td>
+                                <td data-label="Actions">
+                                    <div class="admin-action-row">
+                                        <form method="post" asp-page-handler="ToggleAdmin">
+                                            <input type="hidden" name="id" value="@user.Id" />
+                                            <button type="submit" class="btn btn--outline btn--sm"
+                                                    title="@(user.Roles.Contains("Admin") ? "Remove Admin" : "Grant Admin")">
+                                                @(user.Roles.Contains("Admin") ? "Revoke Admin" : "Grant Admin")
+                                            </button>
+                                        </form>
+                                        <form method="post" asp-page-handler="ToggleActive">
+                                            <input type="hidden" name="id" value="@user.Id" />
+                                            <button type="submit" class="btn btn--outline btn--sm"
+                                                    title="@(user.IsActive ? "Flag this account" : "Restore this account")">
+                                                @(user.IsActive ? "Flag" : "Restore")
+                                            </button>
+                                        </form>
+                                        <form method="post" asp-page-handler="Delete"
+                                              onsubmit="return confirm('Permanently delete @Html.Raw(user.FullName.Replace("'","&#39;"))? This cannot be undone.')">
+                                            <input type="hidden" name="id" value="@user.Id" />
+                                            <button type="submit" class="btn btn--danger btn--sm">Delete</button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </section>
+</div>
