@@ -1228,6 +1228,109 @@ label.required::after {
   accent-color: var(--color-primary);
 }
 
+/* --- Forum post actions / flag / replies ---------------------- */
+.forum-post-card--flagged {
+  border-color: var(--color-danger);
+  background: #fff8f8;
+}
+
+.forum-flag-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: .25rem;
+  font-size: .72rem;
+  font-weight: 700;
+  color: var(--color-danger);
+  background: #fdecea;
+  border: 1px solid #f5c6c2;
+  border-radius: 999px;
+  padding: .12rem .5rem;
+  text-transform: uppercase;
+  letter-spacing: .02em;
+}
+
+.forum-post-card__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-top: var(--space-sm);
+  flex-wrap: wrap;
+}
+
+.btn--xs {
+  font-size: .75rem;
+  padding: .2rem .6rem;
+  border-radius: var(--radius-sm);
+  line-height: 1.4;
+}
+
+.forum-replies {
+  margin-top: var(--space-md);
+  border-left: 3px solid var(--color-border);
+  padding-left: var(--space-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.forum-reply {
+  background: var(--color-surface);
+  border-radius: var(--radius-sm);
+  padding: .6rem .75rem;
+}
+
+.forum-reply__meta {
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+  font-size: .82rem;
+  color: var(--color-text-muted);
+  margin-bottom: .3rem;
+  flex-wrap: wrap;
+}
+
+.forum-reply__avatar {
+  width: 24px;
+  height: 24px;
+  font-size: .75rem;
+  flex-shrink: 0;
+}
+
+.forum-reply__author {
+  color: var(--color-text);
+}
+
+.forum-reply__date {
+  color: var(--color-text-muted);
+}
+
+.forum-reply__body {
+  font-size: .88rem;
+  color: var(--color-text);
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.forum-reply-composer {
+  margin-top: var(--space-md);
+}
+
+.forum-reply-toggle {
+  cursor: pointer;
+  font-size: .82rem;
+  list-style: none;
+}
+
+.forum-reply-toggle::-webkit-details-marker { display: none; }
+
+.forum-reply-form {
+  margin-top: var(--space-sm);
+}
+
+.forum-reply-input {
+  font-size: .9rem;
+}
+
 /* --- Events composer -------------------------------------- */
 .events-composer {
   background: var(--color-card);

@@ -21,6 +21,7 @@ public class ForumModel : PageModel
     public IReadOnlyList<ForumPost> Posts { get; private set; } = [];
     public HashSet<Guid> AdminAuthorIds { get; private set; } = [];
     public int TotalPages { get; private set; }
+    public string? CurrentUserId { get; private set; }
     private const int PageSize = 10;
 
     [BindProperty(SupportsGet = true)]
@@ -35,8 +36,15 @@ public class ForumModel : PageModel
     [BindProperty]
     public string NewPostBody { get; set; } = string.Empty;
 
+    [BindProperty]
+    public string ReplyBody { get; set; } = string.Empty;
+
     public async Task OnGetAsync()
     {
+        CurrentUserId = User.Identity?.IsAuthenticated == true
+            ? _userManager.GetUserId(User)
+            : null;
+
         var adminRoleId = await _db.Roles
             .Where(r => r.Name == "Admin")
             .Select(r => r.Id)
@@ -58,6 +66,8 @@ public class ForumModel : PageModel
 
         Posts = await _db.ForumPosts
             .Include(p => p.Author)
+            .Include(p => p.Replies.OrderBy(r => r.CreatedAt))
+                .ThenInclude(r => r.Author)
             .OrderByDescending(p => p.CreatedAt)
             .Skip((PageNumber - 1) * PageSize)
             .Take(PageSize)
@@ -70,6 +80,75 @@ public class ForumModel : PageModel
                 .ThenByDescending(p => p.CreatedAt)
                 .ToList();
         }
+    }
+
+    public async Task<IActionResult> OnPostDeletePostAsync(Guid postId)
+    {
+        if (!User.IsInRole("Admin")) return Forbid();
+        var post = await _db.ForumPosts.FindAsync(postId);
+        if (post is not null)
+        {
+            _db.ForumPosts.Remove(post);
+            await _db.SaveChangesAsync();
+        }
+        return RedirectToPage();
+    }
+
+    public async Task<IActionResult> OnPostReplyAsync(Guid postId)
+    {
+        if (User.Identity?.IsAuthenticated != true) return Challenge();
+        if (string.IsNullOrWhiteSpace(ReplyBody))
+        {
+            ModelState.AddModelError(string.Empty, "Reply cannot be empty.");
+            await OnGetAsync();
+            return Page();
+        }
+        var post = await _db.ForumPosts.FindAsync(postId);
+        if (post is null) return NotFound();
+
+        var userId = Guid.Parse(_userManager.GetUserId(User)!);
+        _db.ForumReplies.Add(new ForumReply
+        {
+            ReplyId = Guid.NewGuid(),
+            PostId = postId,
+            AuthorId = userId,
+            Body = ReplyBody.Trim()[..Math.Min(ReplyBody.Trim().Length, 5000)],
+            CreatedAt = DateTime.UtcNow
+        });
+        await _db.SaveChangesAsync();
+        return RedirectToPage(new { pageNumber = PageNumber, prioritizeOfficial = PrioritizeOfficial });
+    }
+
+    public async Task<IActionResult> OnPostFlagAsync(Guid postId)
+    {
+        if (User.Identity?.IsAuthenticated != true) return Challenge();
+        var post = await _db.ForumPosts.FindAsync(postId);
+        if (post is null) return NotFound();
+        post.IsFlagged = true;
+        await _db.SaveChangesAsync();
+        return RedirectToPage(new { pageNumber = PageNumber, prioritizeOfficial = PrioritizeOfficial });
+    }
+
+    public async Task<IActionResult> OnPostUnflagAsync(Guid postId)
+    {
+        if (!User.IsInRole("Admin")) return Forbid();
+        var post = await _db.ForumPosts.FindAsync(postId);
+        if (post is null) return NotFound();
+        post.IsFlagged = false;
+        await _db.SaveChangesAsync();
+        return RedirectToPage();
+    }
+
+    public async Task<IActionResult> OnPostDeleteReplyAsync(Guid replyId)
+    {
+        if (!User.IsInRole("Admin")) return Forbid();
+        var reply = await _db.ForumReplies.FindAsync(replyId);
+        if (reply is not null)
+        {
+            _db.ForumReplies.Remove(reply);
+            await _db.SaveChangesAsync();
+        }
+        return RedirectToPage();
     }
 
     public async Task<IActionResult> OnPostAsync()

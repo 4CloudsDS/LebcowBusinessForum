@@ -213,6 +213,12 @@
   color: #721c24;
 }
 
+.badge--delisted {
+  background: #e2e3e5;
+  color: #383d41;
+  text-decoration: line-through;
+}
+
 .badge--free {
   background: #e2e3e5;
   color: #383d41;

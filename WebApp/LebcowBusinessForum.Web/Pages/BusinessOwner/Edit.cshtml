@@ -71,4 +71,36 @@
             <a asp-page="/Account/Dashboard" class="btn btn-outline-secondary">Cancel</a>
         </div>
     </form>
+
+    @if (Model.Business?.Status == "delisted")
+    {
+        <div class="alert alert-info mt-4" role="alert">
+            <strong>This business is currently delisted.</strong>
+            Update the details above and save to resubmit it for admin approval.
+        </div>
+    }
+
+    @if (Model.Business is not null)
+    {
+        <hr class="mt-4" />
+        <div class="border border-danger rounded p-3 mt-2">
+            <h5 class="text-danger">Danger Zone</h5>
+
+            @if (Model.Business.Status == "approved" && !User.IsInRole("Admin"))
+            {
+                <p class="mb-2 small text-muted">Remove this business from the public directory. You can edit and resubmit it for approval afterwards.</p>
+                <form method="post" asp-page-handler="Delist" asp-route-id="@Model.Business.BusinessId"
+                      onsubmit="return confirm('Delist this business? It will be removed from the public directory but you can resubmit it for approval.')"
+                      class="d-inline me-2">
+                    <button type="submit" class="btn btn-warning btn-sm">Delist Business</button>
+                </form>
+            }
+
+            <p class="mb-2 small text-muted @(Model.Business.Status == "approved" && !User.IsInRole("Admin") ? "mt-3" : "")">Permanently delete this business and all its data. This cannot be undone.</p>
+            <form method="post" asp-page-handler="DeleteBusiness" asp-route-id="@Model.Business.BusinessId"
+                  onsubmit="return confirm('Permanently delete this business? All listings, reviews, and data will be removed. This cannot be undone.')">
+                <button type="submit" class="btn btn-danger btn-sm">Permanently Delete</button>
+            </form>
+        </div>
+    }
 </div>

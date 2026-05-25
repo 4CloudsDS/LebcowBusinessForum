@@ -1,15 +1,14 @@
 namespace LebcowBusinessForum.Web.Models;
 
-public class ForumPost
+public class ForumReply
 {
+    public Guid ReplyId { get; set; }
     public Guid PostId { get; set; }
     public Guid AuthorId { get; set; }
-    public string Title { get; set; } = string.Empty;
     public string Body { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-    public bool IsFlagged { get; set; }
 
     // Navigation
+    public ForumPost? Post { get; set; }
     public ApplicationUser? Author { get; set; }
-    public ICollection<ForumReply> Replies { get; set; } = new List<ForumReply>();
 }

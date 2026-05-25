@@ -65,6 +65,14 @@ public class ListingsModel : PageModel
         return RedirectToPage(new { StatusFilter });
     }
 
+    public async Task<IActionResult> OnPostDelistAsync(Guid id)
+    {
+        var adminId = Guid.Parse(_userManager.GetUserId(User)!);
+        await _businessService.DelistAsync(id, adminId);
+        TempData["Message"] = "Business delisted.";
+        return RedirectToPage(new { StatusFilter });
+    }
+
     public async Task<IActionResult> OnPostConfirmUpgradeAsync(Guid listingId)
     {
         var listing = await _db.Listings.FindAsync(listingId);

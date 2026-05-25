@@ -131,4 +131,41 @@ public class EditModel : PageModel
 
         return RedirectToPage("/Account/Dashboard");
     }
+
+    public async Task<IActionResult> OnPostDelistAsync(Guid id)
+    {
+        var userId = Guid.Parse(_userManager.GetUserId(User)!);
+        var business = await _businessService.GetByIdAsync(id);
+
+        if (business is null) return NotFound();
+
+        var user = await _userManager.FindByIdAsync(userId.ToString());
+        var isAdmin = user is not null && await _userManager.IsInRoleAsync(user, "Admin");
+
+        if (!isAdmin && business.OwnerId != userId)
+            return Forbid();
+
+        await _businessService.DelistAsync(id, userId);
+        TempData["EditMessage"] = $"'{business.Name}' has been delisted.";
+        return RedirectToPage("/Account/Dashboard");
+    }
+
+    public async Task<IActionResult> OnPostDeleteBusinessAsync(Guid id)
+    {
+        var userId = Guid.Parse(_userManager.GetUserId(User)!);
+        var business = await _businessService.GetByIdAsync(id);
+
+        if (business is null) return NotFound();
+
+        var user = await _userManager.FindByIdAsync(userId.ToString());
+        var isAdmin = user is not null && await _userManager.IsInRoleAsync(user, "Admin");
+
+        if (!isAdmin && business.OwnerId != userId)
+            return Forbid();
+
+        var name = business.Name;
+        await _businessService.DeleteAsync(id, userId);
+        TempData["EditMessage"] = $"'{name}' has been permanently deleted.";
+        return RedirectToPage("/Account/Dashboard");
+    }
 }
