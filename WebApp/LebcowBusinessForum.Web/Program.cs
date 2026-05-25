@@ -62,7 +62,7 @@ if (!app.Environment.IsDevelopment())
     app.UseHttpsRedirection();
 }
 
-// Seed initial data in development and production (if DB is empty) - creates default roles, users, categories, and some sample businesses.
+// Seed initial data — development gets full sample data, production gets admin + categories only.
 if (app.Environment.IsDevelopment())
 {
     using (var scope = app.Services.CreateScope())
@@ -73,6 +73,19 @@ if (app.Environment.IsDevelopment())
         var roleManager = services.GetRequiredService<RoleManager<ApplicationRole>>();
 
         await SeedData.InitializeAsync(context, userManager, roleManager);
+    }
+}
+else
+{
+    // Production: idempotent — creates roles, one admin user, and standard categories if the DB is empty.
+    using (var scope = app.Services.CreateScope())
+    {
+        var services = scope.ServiceProvider;
+        var context = services.GetRequiredService<ApplicationDbContext>();
+        var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
+        var roleManager = services.GetRequiredService<RoleManager<ApplicationRole>>();
+
+        await SeedDataProduction.InitializeAsync(context, userManager, roleManager);
     }
 }
 
