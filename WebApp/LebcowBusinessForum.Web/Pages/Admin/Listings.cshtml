@@ -100,6 +100,7 @@
                 <a asp-page="Listings" asp-route-StatusFilter="pending" class="admin-filter-pill @(Model.StatusFilter == "pending" ? "is-active" : "")">Pending</a>
                 <a asp-page="Listings" asp-route-StatusFilter="approved" class="admin-filter-pill @(Model.StatusFilter == "approved" ? "is-active" : "")">Approved</a>
                 <a asp-page="Listings" asp-route-StatusFilter="rejected" class="admin-filter-pill @(Model.StatusFilter == "rejected" ? "is-active" : "")">Rejected</a>
+                <a asp-page="Listings" asp-route-StatusFilter="delisted" class="admin-filter-pill @(Model.StatusFilter == "delisted" ? "is-active" : "")">Delisted</a>
             </div>
         </div>
 
@@ -131,7 +132,7 @@
                                 <td data-label="Category">@biz.Category?.Name</td>
                                 <td data-label="Region">@biz.Region</td>
                                 <td data-label="Status">
-                                    <span class="badge @(biz.Status == "approved" ? "badge--approved" : biz.Status == "rejected" ? "badge--rejected" : "badge--pending")">@biz.Status</span>
+                                    <span class="badge @(biz.Status == "approved" ? "badge--approved" : biz.Status == "rejected" ? "badge--rejected" : biz.Status == "delisted" ? "badge--delisted" : "badge--pending")">@biz.Status</span>
                                 </td>
                                 <td data-label="Listing Tier">
                                     @if (latestListing is not null)
@@ -161,6 +162,13 @@
                                             <form method="post">
                                                 <input type="hidden" name="id" value="@biz.BusinessId" />
                                                 <button type="submit" asp-page-handler="Reject" class="btn btn--outline btn--sm">Reject</button>
+                                            </form>
+                                        }
+                                        @if (biz.Status == "approved")
+                                        {
+                                            <form method="post" onsubmit="return confirm('Delist this business? The owner will lose BusinessOwner access if they have no other approved listings.')">
+                                                <input type="hidden" name="id" value="@biz.BusinessId" />
+                                                <button type="submit" asp-page-handler="Delist" class="btn btn--danger btn--sm">Delist</button>
                                             </form>
                                         }
                                     </div>

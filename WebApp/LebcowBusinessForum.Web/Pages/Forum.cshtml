@@ -58,7 +58,8 @@
         @foreach (var post in Model.Posts)
         {
             var isAdminPost = Model.AdminAuthorIds.Contains(post.AuthorId);
-            <article class="forum-post-card @(isAdminPost ? "forum-post-card--admin" : string.Empty)">
+            var currentUserId = Model.CurrentUserId;
+            <article class="forum-post-card @(isAdminPost ? "forum-post-card--admin" : string.Empty) @(post.IsFlagged ? "forum-post-card--flagged" : string.Empty)">
                 <header class="forum-post-card__meta">
                     <span class="business-card__logo-placeholder forum-post-card__avatar" aria-hidden="true">
                         @(post.Author?.FullName?[0] ?? '?')
@@ -73,6 +74,10 @@
                                     Official update
                                 </span>
                             }
+                            @if (post.IsFlagged)
+                            {
+                                <span class="forum-flag-badge" title="This post has been flagged">⚑ Flagged</span>
+                            }
                         </div>
                         <time class="review-item__date" datetime="@post.CreatedAt.ToString("yyyy-MM-dd")">
                             @post.CreatedAt.ToString("d MMM yyyy")
@@ -81,6 +86,78 @@
                 </header>
                 <h3 class="forum-post-card__title">@post.Title</h3>
                 <p class="forum-post-card__body">@post.Body</p>
+
+                <div class="forum-post-card__actions">
+                    @if (User.Identity?.IsAuthenticated == true && post.AuthorId.ToString() != currentUserId)
+                    {
+                        @if (!post.IsFlagged)
+                        {
+                            <form method="post" asp-page-handler="Flag" style="display:inline">
+                                <input type="hidden" name="postId" value="@post.PostId" />
+                                <button type="submit" class="btn btn--ghost btn--xs" title="Flag this post as inappropriate">⚑ Flag</button>
+                            </form>
+                        }
+                    }
+                    @if (User.IsInRole("Admin"))
+                    {
+                        @if (post.IsFlagged)
+                        {
+                            <form method="post" asp-page-handler="Unflag" style="display:inline">
+                                <input type="hidden" name="postId" value="@post.PostId" />
+                                <button type="submit" class="btn btn--outline btn--xs">Clear Flag</button>
+                            </form>
+                        }
+                        <form method="post" asp-page-handler="DeletePost" style="display:inline"
+                              onsubmit="return confirm('Delete this post and all its replies?')">
+                            <input type="hidden" name="postId" value="@post.PostId" />
+                            <button type="submit" class="btn btn--danger btn--xs">Delete</button>
+                        </form>
+                    }
+                </div>
+
+                @if (post.Replies.Any())
+                {
+                    <div class="forum-replies">
+                        @foreach (var reply in post.Replies)
+                        {
+                            <div class="forum-reply">
+                                <div class="forum-reply__meta">
+                                    <span class="business-card__logo-placeholder forum-reply__avatar" aria-hidden="true">
+                                        @(reply.Author?.FullName?[0] ?? '?')
+                                    </span>
+                                    <strong class="forum-reply__author">@(reply.Author?.FullName ?? "Unknown")</strong>
+                                    <time class="forum-reply__date" datetime="@reply.CreatedAt.ToString("yyyy-MM-dd")">
+                                        @reply.CreatedAt.ToString("d MMM yyyy")
+                                    </time>
+                                    @if (User.IsInRole("Admin"))
+                                    {
+                                        <form method="post" asp-page-handler="DeleteReply" style="display:inline;margin-left:auto">
+                                            <input type="hidden" name="replyId" value="@reply.ReplyId" />
+                                            <button type="submit" class="btn btn--danger btn--xs" title="Delete reply"
+                                                    onclick="return confirm('Delete this reply?')">✕</button>
+                                        </form>
+                                    }
+                                </div>
+                                <p class="forum-reply__body">@reply.Body</p>
+                            </div>
+                        }
+                    </div>
+                }
+
+                @if (User.Identity?.IsAuthenticated == true)
+                {
+                    <details class="forum-reply-composer">
+                        <summary class="btn btn--ghost btn--xs forum-reply-toggle">Reply</summary>
+                        <form method="post" asp-page-handler="Reply" class="forum-reply-form">
+                            <input type="hidden" name="postId" value="@post.PostId" />
+                            <div class="form-group" style="margin-top:var(--space-sm)">
+                                <textarea name="ReplyBody" class="form-control forum-reply-input" rows="3"
+                                          placeholder="Write a reply…" maxlength="5000" required></textarea>
+                            </div>
+                            <button type="submit" class="btn btn--primary btn--sm">Post Reply</button>
+                        </form>
+                    </details>
+                }
             </article>
         }
 

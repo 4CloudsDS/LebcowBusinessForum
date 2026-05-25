@@ -23,7 +23,7 @@ public class BusinessServiceTests : IDisposable
             .Options;
         _db = new ApplicationDbContext(options);
         _audit = new AuditService(_db);
-        _sut = new BusinessService(_db, _audit);
+        _sut = new BusinessService(_db, _audit, null!);
     }
 
     public void Dispose() => _db.Dispose();

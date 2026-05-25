@@ -1,5 +1,6 @@
 using LebcowBusinessForum.Web.Data;
 using LebcowBusinessForum.Web.Models;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 namespace LebcowBusinessForum.Web.Services;
@@ -8,11 +9,13 @@ public class BusinessService : IBusinessService
 {
     private readonly ApplicationDbContext _db;
     private readonly IAuditService _audit;
+    private readonly UserManager<ApplicationUser> _userManager;
 
-    public BusinessService(ApplicationDbContext db, IAuditService audit)
+    public BusinessService(ApplicationDbContext db, IAuditService audit, UserManager<ApplicationUser> userManager)
     {
         _db = db;
         _audit = audit;
+        _userManager = userManager;
     }
 
     public async Task<IReadOnlyList<Business>> GetByOwnerAsync(Guid ownerId)
@@ -48,6 +51,16 @@ public class BusinessService : IBusinessService
         if (business is null) return false;
         business.Status = "approved";
         await _db.SaveChangesAsync();
+
+        if (business.OwnerId.HasValue)
+        {
+            var owner = await _userManager.FindByIdAsync(business.OwnerId.Value.ToString());
+            if (owner is not null && !await _userManager.IsInRoleAsync(owner, "BusinessOwner"))
+            {
+                await _userManager.AddToRoleAsync(owner, "BusinessOwner");
+            }
+        }
+
         await _audit.LogAsync(adminUserId, $"Approved business '{business.Name}' (id={businessId})");
         return true;
     }
@@ -58,6 +71,24 @@ public class BusinessService : IBusinessService
         if (business is null) return false;
         business.Status = "rejected";
         await _db.SaveChangesAsync();
+
+        if (business.OwnerId.HasValue)
+        {
+            var hasOtherApproved = await _db.Businesses.AnyAsync(b =>
+                b.OwnerId == business.OwnerId &&
+                b.BusinessId != businessId &&
+                b.Status == "approved");
+
+            if (!hasOtherApproved)
+            {
+                var owner = await _userManager.FindByIdAsync(business.OwnerId.Value.ToString());
+                if (owner is not null && await _userManager.IsInRoleAsync(owner, "BusinessOwner"))
+                {
+                    await _userManager.RemoveFromRoleAsync(owner, "BusinessOwner");
+                }
+            }
+        }
+
         await _audit.LogAsync(adminUserId, $"Rejected business '{business.Name}' (id={businessId})");
         return true;
     }
@@ -81,6 +112,61 @@ public class BusinessService : IBusinessService
             q = q.Where(b => b.CategoryId == categoryId.Value);
 
         return await q.OrderBy(b => b.Name).Take(take).ToListAsync();
+    }
+
+    public async Task<bool> DeleteAsync(Guid businessId, Guid actorUserId)
+    {
+        var business = await _db.Businesses.FindAsync(businessId);
+        if (business is null) return false;
+
+        // Apply demotion before removing the record
+        if (business.OwnerId.HasValue)
+        {
+            var hasOtherApproved = await _db.Businesses.AnyAsync(b =>
+                b.OwnerId == business.OwnerId &&
+                b.BusinessId != businessId &&
+                b.Status == "approved");
+
+            if (!hasOtherApproved)
+            {
+                var owner = await _userManager.FindByIdAsync(business.OwnerId.Value.ToString());
+                if (owner is not null && await _userManager.IsInRoleAsync(owner, "BusinessOwner"))
+                    await _userManager.RemoveFromRoleAsync(owner, "BusinessOwner");
+            }
+        }
+
+        _db.Businesses.Remove(business);
+        await _db.SaveChangesAsync();
+        await _audit.LogAsync(actorUserId, $"Permanently deleted business '{business.Name}' (id={businessId})");
+        return true;
+    }
+
+    public async Task<bool> DelistAsync(Guid businessId, Guid actorUserId)
+    {
+        var business = await _db.Businesses.FindAsync(businessId);
+        if (business is null) return false;
+        business.Status = "delisted";
+        await _db.SaveChangesAsync();
+
+        if (business.OwnerId.HasValue)
+        {
+            var hasOtherApproved = await _db.Businesses.AnyAsync(b =>
+                b.OwnerId == business.OwnerId &&
+                b.BusinessId != businessId &&
+                b.Status == "approved");
+
+            if (!hasOtherApproved)
+            {
+                var owner = await _userManager.FindByIdAsync(business.OwnerId.Value.ToString());
+                if (owner is not null && await _userManager.IsInRoleAsync(owner, "BusinessOwner"))
+                {
+                    await _userManager.RemoveFromRoleAsync(owner, "BusinessOwner");
+                }
+            }
+        }
+
+        await _audit.LogAsync(actorUserId, $"Delisted business '{business.Name}' (id={businessId})");
+        return true;
     }
 
     public async Task<IReadOnlyList<Business>> GetFeaturedAsync(int take = 6)

@@ -10,6 +10,8 @@ public interface IBusinessService
     Task UpdateAsync(Business business);
     Task<bool> ApproveAsync(Guid businessId, Guid adminUserId);
     Task<bool> RejectAsync(Guid businessId, Guid adminUserId);
+    Task<bool> DelistAsync(Guid businessId, Guid actorUserId);
+    Task<bool> DeleteAsync(Guid businessId, Guid actorUserId);
     Task<bool> IsOwnerAsync(Guid businessId, Guid userId);
     Task<IReadOnlyList<Business>> SearchAsync(string? query, string? location, Guid? categoryId, int take = 100);
     Task<IReadOnlyList<Business>> GetFeaturedAsync(int take = 6);

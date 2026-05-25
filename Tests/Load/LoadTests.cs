@@ -193,7 +193,7 @@ public class ServiceLoadTests
     public async Task BusinessService_SearchAsync_100Businesses_UnderBudget()
     {
         using var db = BuildDb("Load_Search_100_" + Guid.NewGuid());
-        var svc = new BusinessService(db, new AuditService(db));
+        var svc = new BusinessService(db, new AuditService(db), null!);
 
         var cat = new Category { CategoryId = Guid.NewGuid(), Name = "Tech" };
         db.Categories.Add(cat);
@@ -224,7 +224,7 @@ public class ServiceLoadTests
     public async Task BusinessService_SearchAsync_500Businesses_UnderBudget()
     {
         using var db = BuildDb("Load_Search_500_" + Guid.NewGuid());
-        var svc = new BusinessService(db, new AuditService(db));
+        var svc = new BusinessService(db, new AuditService(db), null!);
 
         var cat = new Category { CategoryId = Guid.NewGuid(), Name = "Tech" };
         db.Categories.Add(cat);
@@ -256,7 +256,7 @@ public class ServiceLoadTests
     public async Task BusinessService_SearchAsync_TextFilter_ReturnsCorrectSubset()
     {
         using var db = BuildDb("Load_Search_Filter_" + Guid.NewGuid());
-        var svc = new BusinessService(db, new AuditService(db));
+        var svc = new BusinessService(db, new AuditService(db), null!);
 
         var cat = new Category { CategoryId = Guid.NewGuid(), Name = "Food" };
         db.Categories.Add(cat);
@@ -316,7 +316,7 @@ public class ServiceLoadTests
         var tasks = Enumerable.Range(0, parallelism).Select(async _ =>
         {
             using var localDb = BuildDb(dbName);
-            var localSvc = new BusinessService(localDb, new AuditService(localDb));
+            var localSvc = new BusinessService(localDb, new AuditService(localDb), null!);
             return await localSvc.SearchAsync(null, null, null, take: 50);
         });
 
@@ -332,7 +332,7 @@ public class ServiceLoadTests
     public async Task BusinessService_GetFeaturedAsync_With200Businesses_UnderBudget()
     {
         using var db = BuildDb("Load_Featured_" + Guid.NewGuid());
-        var svc = new BusinessService(db, new AuditService(db));
+        var svc = new BusinessService(db, new AuditService(db), null!);
 
         var cat = new Category { CategoryId = Guid.NewGuid(), Name = "Mixed" };
         db.Categories.Add(cat);

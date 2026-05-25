@@ -1,74 +1,133 @@
-@page "{id:guid}"
+﻿@page "{id:guid}"
 @model LebcowBusinessForum.Web.Pages.BusinessOwner.EditModel
 @{
     ViewData["Title"] = "Edit Business";
 }
 
-<div class="container py-5" style="max-width:700px;">
-    <h1 class="mb-2">Edit Business</h1>
-    @if (Model.Business is not null)
+<div class="content-page">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+        <ol>
+            <li><a href="/Account/Dashboard">Dashboard</a></li>
+            <li aria-current="page">Edit Business</li>
+        </ol>
+    </nav>
+
+    <div class="content-page__header">
+        <p class="content-page__eyebrow">Business Owner</p>
+        <h1 class="content-page__title">Edit Business</h1>
+        @if (Model.Business is not null)
+        {
+            <p class="content-page__lead">
+                Editing <strong>@Model.Business.Name</strong>.
+                @if (!User.IsInRole("Admin"))
+                {
+                    <span>Saving will reset the listing to <strong>pending</strong> until an admin approves the changes.</span>
+                }
+            </p>
+        }
+    </div>
+
+    @if (Model.Business?.Status == "delisted")
     {
-        <p class="text-muted mb-4">
-            Editing <strong>@Model.Business.Name</strong>.
-            @if (!User.IsInRole("Admin"))
-            {
-                <span class="text-warning">Saving will reset the listing to <strong>pending</strong> until an admin approves the changes.</span>
-            }
-        </p>
+        <div class="alert alert--info" role="alert">
+            <span class="alert__icon" aria-hidden="true">&#x2139;</span>
+            <strong>This business is currently delisted.</strong>
+            Update the details below and save to resubmit it for admin approval.
+        </div>
     }
 
-    <form method="post">
-        <div asp-validation-summary="All" class="text-danger mb-3"></div>
+    <section class="content-section" aria-labelledby="edit-form-heading">
+        <h2 id="edit-form-heading" class="content-section__title">Business Details</h2>
 
-        <div class="mb-3">
-            <label asp-for="Input.Name" class="form-label"></label>
-            <input asp-for="Input.Name" class="form-control" />
-            <span asp-validation-for="Input.Name" class="text-danger"></span>
-        </div>
+        <form method="post" class="admin-form" novalidate>
+            @Html.AntiForgeryToken()
+            <div asp-validation-summary="ModelOnly" class="alert alert--danger" role="alert"></div>
 
-        <div class="mb-3">
-            <label asp-for="Input.CategoryId" class="form-label"></label>
-            <select asp-for="Input.CategoryId" class="form-select"
-                    asp-items="@(new SelectList(Model.Categories, "CategoryId", "Name"))">
-                <option value="">— Select category —</option>
-            </select>
-            <span asp-validation-for="Input.CategoryId" class="text-danger"></span>
-        </div>
-
-        <div class="mb-3">
-            <label asp-for="Input.Description" class="form-label"></label>
-            <textarea asp-for="Input.Description" class="form-control" rows="4"></textarea>
-            <span asp-validation-for="Input.Description" class="text-danger"></span>
-        </div>
-
-        <div class="mb-3">
-            <label asp-for="Input.Address" class="form-label"></label>
-            <input asp-for="Input.Address" class="form-control" />
-            <span asp-validation-for="Input.Address" class="text-danger"></span>
-        </div>
-
-        <div class="row">
-            <div class="col-md-6 mb-3">
-                <label asp-for="Input.Phone" class="form-label"></label>
-                <input asp-for="Input.Phone" class="form-control" />
-                <span asp-validation-for="Input.Phone" class="text-danger"></span>
+            <div class="form-group">
+                <label asp-for="Input.Name"></label>
+                <input asp-for="Input.Name" class="form-control" autocomplete="organization" />
+                <span asp-validation-for="Input.Name" class="field-validation-error"></span>
             </div>
-            <div class="col-md-6 mb-3">
-                <label asp-for="Input.Email" class="form-label"></label>
-                <input asp-for="Input.Email" class="form-control" />
-                <span asp-validation-for="Input.Email" class="text-danger"></span>
+
+            <div class="form-group">
+                <label asp-for="Input.CategoryId"></label>
+                <select asp-for="Input.CategoryId" class="form-control"
+                        asp-items="@(new SelectList(Model.Categories, "CategoryId", "Name"))">
+                    <option value="">--- Select category ---</option>
+                </select>
+                <span asp-validation-for="Input.CategoryId" class="field-validation-error"></span>
             </div>
-        </div>
 
-        <div class="mb-4">
-            <label asp-for="Input.Website" class="form-label"></label>
-            <input asp-for="Input.Website" class="form-control" placeholder="https://..." />
-            <span asp-validation-for="Input.Website" class="text-danger"></span>
-        </div>
+            <div class="form-group">
+                <label asp-for="Input.Description"></label>
+                <textarea asp-for="Input.Description" class="form-control" rows="4"></textarea>
+                <span asp-validation-for="Input.Description" class="field-validation-error"></span>
+            </div>
 
-        <div class="d-flex gap-2">
-            <button type="submit" class="btn btn-primary">Save Changes</button>
-            <a asp-page="/Account/Dashboard" class="btn btn-outline-secondary">Cancel</a>
-        </div>
-    </form>
+            <div class="form-group">
+                <label asp-for="Input.Address"></label>
+                <input asp-for="Input.Address" class="form-control" autocomplete="street-address" />
+                <span asp-validation-for="Input.Address" class="field-validation-error"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Input.Phone"></label>
+                <input asp-for="Input.Phone" class="form-control" type="tel" autocomplete="tel" />
+                <span asp-validation-for="Input.Phone" class="field-validation-error"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Input.Email"></label>
+                <input asp-for="Input.Email" class="form-control" type="email" autocomplete="email" />
+                <span asp-validation-for="Input.Email" class="field-validation-error"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Input.Website"></label>
+                <input asp-for="Input.Website" class="form-control" type="url" placeholder="https://..." autocomplete="url" />
+                <span asp-validation-for="Input.Website" class="field-validation-error"></span>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn--primary">Save Changes</button>
+                <a href="/Account/Dashboard" class="btn btn--outline">Cancel</a>
+            </div>
+        </form>
+    </section>
+
+    @if (Model.Business is not null)
+    {
+        <section class="content-section" aria-labelledby="danger-zone-heading">
+            <h2 id="danger-zone-heading" class="content-section__title" style="color: var(--color-danger);">Danger Zone</h2>
+
+            @if (Model.Business.Status == "approved" && !User.IsInRole("Admin"))
+            {
+                <div class="admin-action-row">
+                    <div>
+                        <strong>Delist this business</strong>
+                        <p class="admin-action-row__desc">Remove it from the public directory. You can edit and resubmit for approval afterwards.</p>
+                    </div>
+                    <form method="post" asp-page-handler="Delist" asp-route-id="@Model.Business.BusinessId"
+                          onsubmit="return confirm('Delist this business? It will be removed from the public directory but you can resubmit it for approval.')">
+                        <button type="submit" class="btn btn--warning btn--sm">Delist Business</button>
+                    </form>
+                </div>
+            }
+
+            <div class="admin-action-row">
+                <div>
+                    <strong>Permanently delete this business</strong>
+                    <p class="admin-action-row__desc">All listings, reviews, and data will be removed. This cannot be undone.</p>
+                </div>
+                <form method="post" asp-page-handler="DeleteBusiness" asp-route-id="@Model.Business.BusinessId"
+                      onsubmit="return confirm('Permanently delete this business? All listings, reviews, and data will be removed. This cannot be undone.')">
+                    <button type="submit" class="btn btn--danger btn--sm">Permanently Delete</button>
+                </form>
+            </div>
+        </section>
+    }
 </div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

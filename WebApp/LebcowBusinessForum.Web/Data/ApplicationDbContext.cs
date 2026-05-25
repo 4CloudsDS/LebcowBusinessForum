@@ -19,6 +19,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, Applicati
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
     public DbSet<UserFavorite> UserFavorites => Set<UserFavorite>();
     public DbSet<ForumPost> ForumPosts => Set<ForumPost>();
+    public DbSet<ForumReply> ForumReplies => Set<ForumReply>();
     public DbSet<NewsletterSubscription> NewsletterSubscriptions => Set<NewsletterSubscription>();
 
     protected override void OnModelCreating(ModelBuilder builder)
@@ -197,6 +198,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, Applicati
             e.HasKey(p => p.PostId);
             e.Property(p => p.Title).HasMaxLength(200).IsRequired();
             e.Property(p => p.Body).HasMaxLength(10000).IsRequired();
+            e.Property(p => p.IsFlagged).HasDefaultValue(false);
 
             e.HasOne(p => p.Author)
              .WithMany()
@@ -204,8 +206,29 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, Applicati
              .IsRequired(false)
              .OnDelete(DeleteBehavior.SetNull);
 
+            e.HasMany(p => p.Replies)
+             .WithOne(r => r.Post)
+             .HasForeignKey(r => r.PostId)
+             .OnDelete(DeleteBehavior.Cascade);
+
             e.HasIndex(p => p.CreatedAt);
             e.HasIndex(p => p.AuthorId);
+        });
+
+        // ── ForumReply ────────────────────────────────────────────────────────
+        builder.Entity<ForumReply>(e =>
+        {
+            e.HasKey(r => r.ReplyId);
+            e.Property(r => r.Body).HasMaxLength(5000).IsRequired();
+
+            e.HasOne(r => r.Author)
+             .WithMany()
+             .HasForeignKey(r => r.AuthorId)
+             .IsRequired(false)
+             .OnDelete(DeleteBehavior.SetNull);
+
+            e.HasIndex(r => r.PostId);
+            e.HasIndex(r => r.CreatedAt);
         });
 
         // ── NewsletterSubscription ────────────────────────────────────────────
